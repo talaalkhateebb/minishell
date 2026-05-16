@@ -1,0 +1,88 @@
+# Shared test corpus for Minishell.
+# Run each line in BOTH bash and ./minishell, output should match.
+# Group by feature so we can light them up incrementally.
+
+### --- prompt / echo / pwd ---
+echo
+echo hello
+echo hello world
+echo -n hello
+echo -n -n -n hello
+echo "hello world"
+echo 'hello world'
+pwd
+
+### --- quoting (frontend lexer / expander) ---
+echo "hello"world
+echo 'hello'world
+echo "hello"'world'
+echo "a    b"
+echo '   '
+echo "$USER"
+echo '$USER'
+echo "$"
+echo "$?"
+
+### --- env & built-ins ---
+env
+export FOO=bar
+echo $FOO
+unset FOO
+echo $FOO
+export A=1 B=2 C=3
+env
+export
+
+### --- cd / pwd ---
+cd /tmp
+pwd
+cd -
+pwd
+cd
+pwd
+
+### --- redirections ---
+echo hi > /tmp/ms_out
+cat /tmp/ms_out
+cat < /tmp/ms_out
+echo more >> /tmp/ms_out
+cat /tmp/ms_out
+> /tmp/ms_empty
+cat /tmp/ms_empty
+
+### --- pipes ---
+ls | wc -l
+ls | grep . | wc -l
+echo hi | cat
+echo hi | cat | cat
+
+### --- heredoc ---
+cat << EOF
+hello $USER
+EOF
+cat << 'EOF'
+hello $USER
+EOF
+
+### --- exit status / $? ---
+echo $?
+false
+echo $?
+true
+echo $?
+ls /this/does/not/exist
+echo $?
+
+### --- exit ---
+exit
+exit 0
+exit 42
+exit foo
+
+### --- signals (interactive only — eyeball these) ---
+# Ctrl-C at empty prompt → new prompt, last_status 130
+# Ctrl-D at empty prompt → exit shell
+# Ctrl-\ at prompt → nothing happens
+# sleep 5 then Ctrl-C → child killed, last_status 130
+# cat then Ctrl-C → child killed, last_status 130
+# cat << EOF then Ctrl-C → heredoc cancelled
