@@ -29,6 +29,9 @@ endif
 SRCS = \
 	src/main.c \
 	src/lexer/lexer.c \
+	src/lexer/lexer_word.c \
+	src/lexer/lexer_op.c \
+	src/lexer/lexer_tokens.c \
 	src/parser/parser.c \
 	src/expander/expander.c \
 	src/env/env.c \

@@ -58,6 +58,17 @@ extern volatile sig_atomic_t	g_signal;
 t_cmd	*parse_line(const char *line, t_shell *sh);
 void	free_cmds(t_cmd *cmds);
 
+/* Lexer internals — shared between lexer.c, lexer_word, lexer_op, lexer_tokens */
+int		is_space(char c);
+int		is_op_char(char c);
+char	*extract_word(const char *line, size_t start, size_t end);
+int		handle_word(const char *line, size_t *i, t_token **head);
+int		handle_op(const char *line, size_t *i, t_token **head);
+t_token	*token_new(char *value, t_token_type type);
+void	token_append(t_token **head, t_token *node);
+void	free_tokens(t_token *head);
+t_token	*tokenize(const char *line);
+
 /* === Env API — A owns, B reads === */
 int		env_init(t_shell *sh, char **envp);
 void	env_free(t_shell *sh);
