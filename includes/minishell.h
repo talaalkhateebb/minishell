@@ -78,7 +78,24 @@ int		cmd_add_redir(t_cmd *cmd, t_token_type type, const char *target);
 t_redir	*redir_new(t_token_type type, char *target);
 
 /* Expander — frontend, called by parse_line */
+typedef struct s_xstate
+{
+	char	*dst;
+	size_t	pos;
+	char	q;
+	t_shell	*sh;
+}	t_xstate;
+
 void	expand_cmds(t_cmd *cmds, t_shell *sh);
+char	*expand_word(const char *w, t_shell *sh);
+char	*strip_quotes_only(const char *w);
+int		delim_is_quoted(const char *d);
+int		handle_quote_state(char c, char *q);
+int		is_var_start(char c);
+int		is_var_char(char c);
+size_t	var_name_len(const char *s);
+char	*get_var_value(const char *w, size_t pos, size_t nlen, t_shell *sh);
+char	*itoa_status(int n);
 
 /* === Env API — A owns, B reads === */
 int		env_init(t_shell *sh, char **envp);
