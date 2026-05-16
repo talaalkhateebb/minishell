@@ -69,6 +69,17 @@ void	token_append(t_token **head, t_token *node);
 void	free_tokens(t_token *head);
 t_token	*tokenize(const char *line);
 
+/* Parser internals — shared between parser.c, parser_validate, parser_build, parser_argv */
+int		validate_syntax(t_token *tokens);
+t_cmd	*build_cmds(t_token *tokens);
+t_cmd	*cmd_new(void);
+int		cmd_add_arg(t_cmd *cmd, const char *arg);
+int		cmd_add_redir(t_cmd *cmd, t_token_type type, const char *target);
+t_redir	*redir_new(t_token_type type, char *target);
+
+/* Expander — frontend, called by parse_line */
+void	expand_cmds(t_cmd *cmds, t_shell *sh);
+
 /* === Env API — A owns, B reads === */
 int		env_init(t_shell *sh, char **envp);
 void	env_free(t_shell *sh);

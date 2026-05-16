@@ -33,6 +33,9 @@ SRCS = \
 	src/lexer/lexer_op.c \
 	src/lexer/lexer_tokens.c \
 	src/parser/parser.c \
+	src/parser/parser_validate.c \
+	src/parser/parser_argv.c \
+	src/parser/parser_build.c \
 	src/expander/expander.c \
 	src/env/env.c \
 	src/env/env_lookup.c \
