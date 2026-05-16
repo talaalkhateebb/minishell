@@ -121,6 +121,11 @@ int		builtin_echo(char **argv);
 int		builtin_env(t_shell *sh);
 int		builtin_export(char **argv, t_shell *sh);
 int		builtin_unset(char **argv, t_shell *sh);
+int		is_valid_name(const char *s);
+int		process_export_arg(const char *arg, t_shell *sh);
+int		run_frontend_builtin(t_cmd *c, t_shell *sh);
+int		run_backend_builtin(t_cmd *c, t_shell *sh);
+int		try_run_builtin(t_cmd *cmds, t_shell *sh);
 
 /* === Built-ins B (filesystem / exit) === */
 int		builtin_cd(char **argv, t_shell *sh);

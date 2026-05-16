@@ -14,6 +14,7 @@ static void	check_signal_after_readline(t_shell *sh)
 static void	run_one_line(char *line, t_shell *sh)
 {
 	t_cmd	*cmds;
+	int		rc;
 
 	if (!*line)
 		return ;
@@ -21,7 +22,10 @@ static void	run_one_line(char *line, t_shell *sh)
 	cmds = parse_line(line, sh);
 	if (!cmds)
 		return ;
-	sh->last_status = execute(cmds, sh);
+	rc = try_run_builtin(cmds, sh);
+	if (rc < 0)
+		rc = execute(cmds, sh);
+	sh->last_status = rc;
 	free_cmds(cmds);
 }
 

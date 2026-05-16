@@ -46,6 +46,9 @@ SRCS = \
 	src/env/env_mod.c \
 	src/signals/signals.c \
 	src/builtins_a/builtins_a.c \
+	src/builtins_a/builtin_export.c \
+	src/builtins_a/export_args.c \
+	src/builtins_a/dispatch.c \
 	src/executor/executor.c \
 	src/redirections/redirections.c \
 	src/pipes/pipes.c \
