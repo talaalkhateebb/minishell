@@ -32,7 +32,9 @@ SRCS = \
 	src/parser/parser.c \
 	src/expander/expander.c \
 	src/env/env.c \
-	src/env/env_more.c \
+	src/env/env_lookup.c \
+	src/env/env_entry.c \
+	src/env/env_mod.c \
 	src/signals/signals.c \
 	src/builtins_a/builtins_a.c \
 	src/executor/executor.c \

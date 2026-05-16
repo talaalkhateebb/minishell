@@ -65,6 +65,9 @@ char	*env_get(t_shell *sh, const char *key);
 int		env_set(t_shell *sh, const char *key, const char *value);
 int		env_unset(t_shell *sh, const char *key);
 char	**env_to_array(t_shell *sh);
+/* env internals — shared between env_lookup, env_entry, env_mod */
+int		env_find_index(t_shell *sh, const char *key);
+char	*env_make_entry(const char *key, const char *value);
 
 /* === Backend (Person B) — exposed to frontend === */
 int		execute(t_cmd *cmds, t_shell *sh);

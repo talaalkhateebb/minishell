@@ -1,13 +1,33 @@
 #include "minishell.h"
 
 /*
-** Env module — Person A (frontend), Days 1–2.
-** env_init / env_free are wired so the project compiles and so $? and
-** built-ins have a place to read/write. Real env_get/env_set/env_unset
-** are TODO: pick a representation (linked list of key=value, or stay
-** with char**) and implement them properly.
+** ============================================================
+** env.c  —  the foundation of the env module.
+**
+** The env is a list of strings shaped "KEY=VALUE", ending in NULL.
+** We copy the OS's env on startup so we can freely change ours
+** without touching the OS's.
+**
+** Layout (after env_init):
+**     sh->envp[0] -> "USER=tala"
+**     sh->envp[1] -> "HOME=/Users/tala"
+**     sh->envp[2] -> NULL
+**
+** This file holds the lifecycle helpers (count / init / free /
+** export-as-array). Lookups live in env_lookup.c and modifications
+** live in env_mod.c.
+** ============================================================
 */
 
+/*
+** count_envp — how many strings are in this list?
+**
+** A string list always ends with NULL. We just walk until we
+** hit NULL and return the position we reached.
+**
+** Example:
+**   envp = ["A=1", "B=2", NULL]   ->   returns 2
+*/
 static int	count_envp(char **envp)
 {
 	int	n;
@@ -18,6 +38,24 @@ static int	count_envp(char **envp)
 	return (n);
 }
 
+/*
+** env_init — copy the OS's env into our own storage.
+**
+** Called ONCE at startup, from main().
+** Inputs:  sh   — pointer to our shell-wide state
+**          envp — the env list main() received from the OS
+** Output:  0 on success, 1 on malloc failure.
+**
+** Steps:
+**   1. Reset last_status to 0 (no command has run yet).
+**   2. Count the OS env, then malloc room for n+1 pointers
+**      (the +1 is for the trailing NULL).
+**   3. ms_strdup each entry so we own independent memory.
+**   4. Set the last slot to NULL.
+**
+** After this function, the OS's envp is untouched and sh->envp
+** is a freshly-owned copy we can grow/shrink/modify.
+*/
 int	env_init(t_shell *sh, char **envp)
 {
 	int	n;
@@ -40,6 +78,12 @@ int	env_init(t_shell *sh, char **envp)
 	return (0);
 }
 
+/*
+** env_free — release the env list we built.
+**
+** Called once on shutdown. Frees each string, then the array.
+** Guards against NULL so it's safe to call twice.
+*/
 void	env_free(t_shell *sh)
 {
 	int	i;
@@ -56,17 +100,14 @@ void	env_free(t_shell *sh)
 	sh->envp = NULL;
 }
 
-char	*env_get(t_shell *sh, const char *key)
+/*
+** env_to_array — hand the raw char** to whoever needs it.
+**
+** Used by the backend's executor when it calls execve(), which
+** expects a "char **envp" argument. We just return our internal
+** array directly; do NOT free what this returns.
+*/
+char	**env_to_array(t_shell *sh)
 {
-	(void)sh;
-	(void)key;
-	return (NULL);
-}
-
-int	env_set(t_shell *sh, const char *key, const char *value)
-{
-	(void)sh;
-	(void)key;
-	(void)value;
-	return (0);
+	return (sh->envp);
 }
