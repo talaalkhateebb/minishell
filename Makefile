@@ -17,7 +17,9 @@ ifeq ($(UNAME_S),Darwin)
 	endif
 endif
 
-# libft (optional during day-0 scaffold; required for full project)
+# libft is authorized by the subject but not required, and this project does
+# not use it — the few helpers we need live in src/utils/ as ms_*. The hooks
+# below stay so that dropping a libft/ folder in would just work.
 LIBFT_DIR	= libft
 LIBFT		= $(LIBFT_DIR)/libft.a
 HAS_LIBFT	:= $(shell test -f $(LIBFT_DIR)/Makefile && echo 1 || echo 0)
@@ -70,7 +72,7 @@ libft_step:
 ifeq ($(HAS_LIBFT),1)
 	@$(MAKE) -C $(LIBFT_DIR)
 else
-	@echo "note: libft/ not present yet — building without it (day-0 scaffold)."
+	@:
 endif
 
 %.o: %.c includes/minishell.h
