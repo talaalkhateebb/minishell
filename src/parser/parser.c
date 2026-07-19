@@ -1,52 +1,59 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                          :::      :::::::: */
+/*   parser.c                                             :+:      :+:    :+: */
+/*                                                        +:+ +:+         +:+ */
+/*   By: talaalkh <talaalkh@student.42.fr>                 +#+  +:+       +#+ */
+/*                                                          +#+#+#+#+#+   +#+ */
+/*   Created: 2026/07/19 11:00:00 by talaalkh                      #+#    #+# */
+/*   Updated: 2026/07/19 11:00:00 by talaalkh               ###   ########.fr */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "minishell.h"
 
 /*
-** Day-0 stub: parse_line returns a hardcoded `echo hi` t_cmd so the
-** project compiles end-to-end. Replace with the real lexer → parser
-** → expander pipeline.
+** Parser — Person A (frontend).
+**
+** parse_line is the single entry point the rest of the shell uses:
+**   line → tokenize() → parse_tokens() (which expands as it goes) → t_cmd
+**
+** Returns NULL on a syntax error or an empty line, having already set
+** sh->last_status (2 for a syntax error, as bash does).
 */
 
-static t_cmd	*build_stub_echo_hi(void)
+void	syntax_error(const char *near, t_shell *sh)
 {
-	t_cmd	*cmd;
-
-	cmd = malloc(sizeof(t_cmd));
-	if (!cmd)
-		return (NULL);
-	cmd->argv = malloc(sizeof(char *) * 3);
-	if (!cmd->argv)
-	{
-		free(cmd);
-		return (NULL);
-	}
-	cmd->argv[0] = ms_strdup("echo");
-	cmd->argv[1] = ms_strdup("hi");
-	cmd->argv[2] = NULL;
-	cmd->redirs = NULL;
-	cmd->next = NULL;
-	return (cmd);
+	put_str(2, "minishell: syntax error near unexpected token `");
+	put_str(2, near);
+	put_str(2, "'\n");
+	sh->last_status = 2;
 }
 
 t_cmd	*parse_line(const char *line, t_shell *sh)
 {
-	(void)line;
-	(void)sh;
-	return (build_stub_echo_hi());
+	t_token	*tokens;
+	t_cmd	*cmds;
+	int		err;
+
+	tokens = tokenize(line, &err);
+	if (err)
+	{
+		put_str(2, "minishell: unexpected EOF while looking for"
+			" matching quote\n");
+		sh->last_status = 2;
+		return (NULL);
+	}
+	if (!tokens)
+		return (NULL);
+	cmds = parse_tokens(tokens, sh);
+	free_tokens(tokens);
+	return (cmds);
 }
 
 static void	free_argv(char **argv)
 {
-	int	i;
-
-	if (!argv)
-		return ;
-	i = 0;
-	while (argv[i])
-	{
-		free(argv[i]);
-		i++;
-	}
-	free(argv);
+	free_array(argv);
 }
 
 static void	free_redirs(t_redir *redirs)
@@ -56,6 +63,8 @@ static void	free_redirs(t_redir *redirs)
 	while (redirs)
 	{
 		next = redirs->next;
+		if (redirs->type == T_HEREDOC && redirs->heredoc_fd >= 0)
+			close(redirs->heredoc_fd);
 		free(redirs->target);
 		free(redirs);
 		redirs = next;

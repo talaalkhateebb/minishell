@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                          :::      :::::::: */
+/*   main.c                                               :+:      :+:    :+: */
+/*                                                        +:+ +:+         +:+ */
+/*   By: talaalkh <talaalkh@student.42.fr>                 +#+  +:+       +#+ */
+/*                                                          +#+#+#+#+#+   +#+ */
+/*   Created: 2026/07/19 11:00:00 by talaalkh                      #+#    #+# */
+/*   Updated: 2026/07/19 11:00:00 by talaalkh               ###   ########.fr */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "minishell.h"
 
 volatile sig_atomic_t	g_signal = 0;
@@ -17,7 +29,8 @@ static void	run_one_line(char *line, t_shell *sh)
 
 	if (!*line)
 		return ;
-	add_history(line);
+	if (is_interactive())
+		add_history(line);
 	cmds = parse_line(line, sh);
 	if (!cmds)
 		return ;
@@ -31,11 +44,12 @@ static void	prompt_loop(t_shell *sh)
 
 	while (1)
 	{
-		line = readline("minishell$ ");
+		line = ms_readline("minishell$ ");
 		check_signal_after_readline(sh);
 		if (!line)
 		{
-			write(1, "exit\n", 5);
+			if (is_interactive())
+				put_str(1, "exit\n");
 			break ;
 		}
 		run_one_line(line, sh);

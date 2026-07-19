@@ -1,11 +1,24 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                          :::      :::::::: */
+/*   env.c                                                :+:      :+:    :+: */
+/*                                                        +:+ +:+         +:+ */
+/*   By: talaalkh <talaalkh@student.42.fr>                 +#+  +:+       +#+ */
+/*                                                          +#+#+#+#+#+   +#+ */
+/*   Created: 2026/07/19 11:00:00 by talaalkh                      #+#    #+# */
+/*   Updated: 2026/07/19 11:00:00 by talaalkh               ###   ########.fr */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "minishell.h"
 
 /*
-** Env module — Person A (frontend), Days 1–2.
-** env_init / env_free are wired so the project compiles and so $? and
-** built-ins have a place to read/write. Real env_get/env_set/env_unset
-** are TODO: pick a representation (linked list of key=value, or stay
-** with char**) and implement them properly.
+** Env module — Person A (frontend).
+**
+** Representation: a NULL-terminated char ** of "KEY=VALUE" strings, the
+** same shape execve() wants, so env_to_array() is free. An entry with no
+** '=' is an exported-but-unset name (`export FOO`): `export` lists it,
+** `env` does not, and env_get() reports it as absent.
 */
 
 static int	count_envp(char **envp)
@@ -42,31 +55,38 @@ int	env_init(t_shell *sh, char **envp)
 
 void	env_free(t_shell *sh)
 {
-	int	i;
-
-	if (!sh->envp)
-		return ;
-	i = 0;
-	while (sh->envp[i])
-	{
-		free(sh->envp[i]);
-		i++;
-	}
-	free(sh->envp);
+	free_array(sh->envp);
 	sh->envp = NULL;
 }
 
-char	*env_get(t_shell *sh, const char *key)
+/*
+** True when `entry` ("KEY=VALUE" or bare "KEY") has exactly `key` as its
+** name. Comparing up to the '=' stops "PATHEXT=..." matching "PATH".
+*/
+int	env_key_match(const char *entry, const char *key)
 {
-	(void)sh;
-	(void)key;
-	return (NULL);
+	size_t	i;
+
+	i = 0;
+	while (entry[i] && entry[i] != '=' && key[i] && entry[i] == key[i])
+		i++;
+	if (key[i] != '\0')
+		return (0);
+	return (entry[i] == '=' || entry[i] == '\0');
 }
 
-int	env_set(t_shell *sh, const char *key, const char *value)
+int	env_find_index(t_shell *sh, const char *key)
 {
-	(void)sh;
-	(void)key;
-	(void)value;
-	return (0);
+	int	i;
+
+	if (!sh->envp || !key)
+		return (-1);
+	i = 0;
+	while (sh->envp[i])
+	{
+		if (env_key_match(sh->envp[i], key))
+			return (i);
+		i++;
+	}
+	return (-1);
 }

@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                          :::      :::::::: */
-/*   env_more.c                                           :+:      :+:    :+: */
+/*   lexer_utils.c                                        :+:      :+:    :+: */
 /*                                                        +:+ +:+         +:+ */
 /*   By: talaalkh <talaalkh@student.42.fr>                 +#+  +:+       +#+ */
 /*                                                          +#+#+#+#+#+   +#+ */
@@ -12,49 +12,58 @@
 
 #include "minishell.h"
 
-/*
-** env_get returns a pointer *into* the stored entry, not a copy — callers
-** must not free it, and must not hold it across an env_set/env_unset that
-** could reallocate the array.
-*/
-char	*env_get(t_shell *sh, const char *key)
+int	is_space(char c)
 {
-	int		idx;
-	char	*entry;
-	size_t	i;
-
-	idx = env_find_index(sh, key);
-	if (idx == -1)
-		return (NULL);
-	entry = sh->envp[idx];
-	i = 0;
-	while (entry[i] && entry[i] != '=')
-		i++;
-	if (entry[i] != '=')
-		return (NULL);
-	return (entry + i + 1);
+	return (c == ' ' || c == '\t' || c == '\n'
+		|| c == '\v' || c == '\f' || c == '\r');
 }
 
-int	env_unset(t_shell *sh, const char *key)
+int	is_op_char(char c)
 {
-	int	idx;
-	int	i;
+	return (c == '|' || c == '<' || c == '>');
+}
 
-	idx = env_find_index(sh, key);
-	if (idx == -1)
-		return (0);
-	free(sh->envp[idx]);
-	i = idx;
-	while (sh->envp[i + 1])
+t_token	*tok_new(char *value, t_token_type type)
+{
+	t_token	*tok;
+
+	if (!value)
+		return (NULL);
+	tok = malloc(sizeof(t_token));
+	if (!tok)
+		return (free(value), NULL);
+	tok->value = value;
+	tok->type = type;
+	tok->next = NULL;
+	return (tok);
+}
+
+void	tok_add_back(t_token **head, t_token *tok)
+{
+	t_token	*cur;
+
+	if (!tok)
+		return ;
+	if (!*head)
 	{
-		sh->envp[i] = sh->envp[i + 1];
-		i++;
+		*head = tok;
+		return ;
 	}
-	sh->envp[i] = NULL;
-	return (0);
+	cur = *head;
+	while (cur->next)
+		cur = cur->next;
+	cur->next = tok;
 }
 
-char	**env_to_array(t_shell *sh)
+void	free_tokens(t_token *tokens)
 {
-	return (sh->envp);
+	t_token	*next;
+
+	while (tokens)
+	{
+		next = tokens->next;
+		free(tokens->value);
+		free(tokens);
+		tokens = next;
+	}
 }

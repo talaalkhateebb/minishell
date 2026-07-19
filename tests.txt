@@ -1,6 +1,11 @@
 # Shared test corpus for Minishell.
 # Run each line in BOTH bash and ./minishell, output should match.
 # Group by feature so we can light them up incrementally.
+#
+# MOST OF THIS IS NOW AUTOMATED: ./run_tests.sh diffs 60 cases against the
+# real bash and reports any mismatch (-v shows each diff). This file is
+# kept for the cases a pipe can't drive — the interactive signal checks at
+# the bottom still have to be eyeballed by hand.
 
 ### --- prompt / echo / pwd ---
 echo
