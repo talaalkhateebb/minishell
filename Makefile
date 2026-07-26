@@ -47,6 +47,7 @@ SRCS = \
 	src/builtins_a/builtins_export2.c \
 	src/executor/executor.c \
 	src/executor/executor_path.c \
+	src/executor/executor_error.c \
 	src/redirections/redirections.c \
 	src/pipes/pipes.c \
 	src/pipes/pipes_utils.c \

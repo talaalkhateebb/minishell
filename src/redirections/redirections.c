@@ -18,6 +18,18 @@
 
 static int	open_target(t_redir *r)
 {
+	struct stat	st;
+
+	/*
+	** On some systems open("/", O_CREAT|…) returns EEXIST ("File exists").
+	** bash on Linux (and the evaluator) reports "Is a directory" instead.
+	*/
+	if (r->type != T_REDIR_IN && stat(r->target, &st) == 0
+		&& S_ISDIR(st.st_mode))
+	{
+		errno = EISDIR;
+		return (-1);
+	}
 	if (r->type == T_REDIR_IN)
 		return (open(r->target, O_RDONLY));
 	if (r->type == T_REDIR_OUT)

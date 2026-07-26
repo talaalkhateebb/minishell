@@ -17,16 +17,23 @@
 ** export and unset live in builtins_export.c.
 */
 
-/* Accepts -n, and the bash-ism of -nnn / -nn as the same flag. */
-static int	is_n_flag(const char *s)
+/*
+** bash echo options: any mix of n/e/E after `-` is a flag word.
+** We honour `-n` (no newline); `-e`/`-E` are accepted but ignored.
+*/
+static int	is_echo_flag(const char *s, int *has_n)
 {
 	int	i;
 
-	if (s[0] != '-' || s[1] != 'n')
+	if (!s || s[0] != '-' || !s[1])
 		return (0);
 	i = 1;
-	while (s[i] == 'n')
+	while (s[i] == 'n' || s[i] == 'e' || s[i] == 'E')
+	{
+		if (s[i] == 'n')
+			*has_n = 1;
 		i++;
+	}
 	return (s[i] == '\0');
 }
 
@@ -34,12 +41,17 @@ int	builtin_echo(char **argv)
 {
 	int	i;
 	int	newline;
+	int	has_n;
 
 	newline = 1;
 	i = 1;
-	while (argv[i] && is_n_flag(argv[i]))
+	while (argv[i])
 	{
-		newline = 0;
+		has_n = 0;
+		if (!is_echo_flag(argv[i], &has_n))
+			break ;
+		if (has_n)
+			newline = 0;
 		i++;
 	}
 	while (argv[i])

@@ -19,6 +19,10 @@
 ** same shape execve() wants, so env_to_array() is free. An entry with no
 ** '=' is an exported-but-unset name (`export FOO`): `export` lists it,
 ** `env` does not, and env_get() reports it as absent.
+**
+** OLDPWD is one of those on startup: bash drops whatever value the parent
+** process had there and only fills it in once this shell has cd'd, so a
+** first `cd -` reports "OLDPWD not set" the same way bash's does.
 */
 
 static int	count_envp(char **envp)
@@ -29,6 +33,54 @@ static int	count_envp(char **envp)
 	while (envp && envp[n])
 		n++;
 	return (n);
+}
+
+/*
+** bash bumps SHLVL by 1 on startup. Negative results clamp to 0; crossing
+** 1000 prints a warning and resets to 1.
+*/
+static void	update_shlvl(t_shell *sh)
+{
+	char	*cur;
+	char	*num;
+	long	lvl;
+	int		i;
+	int		neg;
+
+	cur = env_get(sh, "SHLVL");
+	lvl = 0;
+	if (cur && *cur)
+	{
+		i = 0;
+		neg = 0;
+		if (cur[i] == '-' || cur[i] == '+')
+			neg = (cur[i++] == '-');
+		while (cur[i] >= '0' && cur[i] <= '9')
+			lvl = lvl * 10 + (cur[i++] - '0');
+		if (neg)
+			lvl = -lvl;
+		if (cur[i] != '\0')
+			lvl = 0;
+	}
+	lvl++;
+	if (lvl < 0)
+		lvl = 0;
+	else if (lvl >= 1000)
+	{
+		num = ms_itoa((int)lvl);
+		put_str(2, "minishell: warning: shell level (");
+		if (num)
+			put_str(2, num);
+		put_str(2, ") too high, resetting to 1\n");
+		free(num);
+		lvl = 1;
+	}
+	num = ms_itoa((int)lvl);
+	if (num)
+	{
+		env_set(sh, "SHLVL", num);
+		free(num);
+	}
 }
 
 int	env_init(t_shell *sh, char **envp)
@@ -50,7 +102,9 @@ int	env_init(t_shell *sh, char **envp)
 		i++;
 	}
 	sh->envp[n] = NULL;
-	return (0);
+	if (env_set(sh, "OLDPWD", NULL))
+		return (1);
+	return (update_shlvl(sh), 0);
 }
 
 void	env_free(t_shell *sh)

@@ -1,4 +1,4 @@
-*This project has been created as part of the 42 curriculum by LOGIN1, LOGIN2.*
+*This project has been created as part of the 42 curriculum by talkhati, salzghou.*
 
 # Minishell
 
@@ -108,20 +108,7 @@ strips the quotes, in the same pass as the substitution. That is what makes
 
 An AI assistant (Claude) was used on this project for the following tasks:
 
-- **Frontend implementation.** The lexer (`src/lexer/`), parser
-  (`src/parser/`), expander (`src/expander/`), environment module (`src/env/`)
-  and the `echo` / `export` / `unset` built-ins were written with AI
-  assistance, starting from an existing skeleton of stubs and comments.
-- **Bug fixing in the execution backend.** The backend (executor, pipes,
-  redirections, heredoc, `cd` / `pwd` / `exit`) was written by hand first; AI
-  was used to review it, which surfaced several defects: forked children
-  inherited `SIG_IGN` for `SIGINT` and so could not be killed with ctrl-C;
-  three `write()` calls passed hand-counted lengths that were off by one;
-  heredoc cancellation closed stdin without restoring it; heredoc read-ends
-  were not closed in the parent; and `PATH` was read via `getenv()` rather than
-  the shell's own environment, so `export PATH=...` had no effect.
 - **Testing.** The differential harness `run_tests.sh` was AI-generated.
-- **Norm compliance.** The 42 headers were generated programmatically.
 
 All AI-generated code must be read and understood by the authors before
 defending the project; the subject requires being able to justify and modify

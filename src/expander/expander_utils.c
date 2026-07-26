@@ -63,6 +63,16 @@ char	*expand_dollar(const char *s, int *i, t_shell *sh)
 	(*i)++;
 	if (s[*i] == '?')
 		return ((*i)++, ms_itoa(sh->last_status));
+	/*
+	** bash: `$0`…`$9` are positional. Only one digit is consumed without
+	** braces, so `$1230` is `$1` + `230`. `$0` is the shell name.
+	*/
+	if (s[*i] >= '0' && s[*i] <= '9')
+	{
+		if (s[*i] == '0')
+			return ((*i)++, ms_strdup("minishell"));
+		return ((*i)++, ms_strdup(""));
+	}
 	if (!is_var_start(s[*i]))
 		return (ms_strdup("$"));
 	start = *i;

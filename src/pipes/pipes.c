@@ -36,9 +36,39 @@ static void	child_wire_pipes(int (*pipes)[2], int n, int idx)
 ** Signals go back to their defaults here: a child must be killable with
 ** Ctrl-C, and it is the parent that ignores SIGINT while it waits.
 */
+/*
+** bash: if execve fails with ENOEXEC (e.g. empty +x file), retry as a
+** /bin/sh script — that is why `./file_test` on an empty file exits 0.
+*/
+static void	exec_as_shell_script(char *path, char **argv, char **env)
+{
+	char	**new_argv;
+	int		n;
+	int		i;
+
+	n = 0;
+	while (argv[n])
+		n++;
+	new_argv = malloc(sizeof(char *) * (n + 2));
+	if (!new_argv)
+		return ;
+	new_argv[0] = "/bin/sh";
+	new_argv[1] = path;
+	i = 1;
+	while (argv[i])
+	{
+		new_argv[i + 1] = argv[i];
+		i++;
+	}
+	new_argv[i + 1] = NULL;
+	execve("/bin/sh", new_argv, env);
+	free(new_argv);
+}
+
 static void	run_child(t_cmd *cmd, t_shell *sh)
 {
 	char	*exec_path;
+	char	**env;
 
 	setup_signals_child();
 	if (apply_redirs(cmd) == -1)
@@ -49,11 +79,11 @@ static void	run_child(t_cmd *cmd, t_shell *sh)
 		exit(run_builtin(cmd, sh));
 	exec_path = find_executable(cmd->argv[0], sh);
 	if (!exec_path)
-	{
-		put_err(cmd->argv[0], "command not found");
-		exit(127);
-	}
-	execve(exec_path, cmd->argv, env_to_array(sh));
+		exit(report_exec_error(cmd->argv[0]));
+	env = env_to_array(sh);
+	execve(exec_path, cmd->argv, env);
+	if (errno == ENOEXEC)
+		exec_as_shell_script(exec_path, cmd->argv, env);
 	put_err(cmd->argv[0], strerror(errno));
 	exit(126);
 }

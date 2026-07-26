@@ -56,6 +56,17 @@ int	argv_append(t_cmd *cmd, char *value)
 	return (0);
 }
 
+/*
+** Expands one word token and attaches the resulting fields. Unquoted
+** expansions are split on IFS; an unquoted word that expands to nothing
+** disappears (`$EMPTY echo hi` → `echo hi`). Quotes keep an empty
+** argument alive, so `echo ""` still prints a blank line.
+*/
+int	word_append(t_cmd *cmd, t_token *tok, t_shell *sh)
+{
+	return (expand_to_argv(cmd, tok->value, sh));
+}
+
 /* Takes ownership of `target`. */
 int	redir_append(t_cmd *cmd, t_token_type type, char *target, int expand)
 {

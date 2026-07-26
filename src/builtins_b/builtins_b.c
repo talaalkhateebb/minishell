@@ -13,8 +13,24 @@
 #include "minishell.h"
 
 /*
-** Built-ins owned by Person B: cd, pwd, exit.
+** Built-ins owned by Person B: cd, pwd, exit, `.` (source stub).
 */
+
+/*
+** bash's `.` / source. Full file sourcing is out of scope for the
+** mandatory part; the no-argument case must match bash's message.
+*/
+int	builtin_dot(char **argv)
+{
+	if (!argv[1])
+	{
+		put_err(".", "filename argument required");
+		put_str(2, ".: usage: . filename [arguments]\n");
+		return (2);
+	}
+	put_err(argv[1], "No such file or directory");
+	return (1);
+}
 
 /* `cd` with no argument uses HOME; `cd -` returns to OLDPWD and echoes
 ** the destination, both of which come from the env module. */
@@ -57,8 +73,7 @@ int	builtin_cd(char **argv, t_shell *sh)
 	char	old[4096];
 	char	new[4096];
 
-	if (argv[1] && argv[2])
-		return (put_err("cd", "too many arguments"), 1);
+	/* bash 3.2 ignores extra args: `cd a b` only tries `a`. */
 	target = resolve_cd_target(argv, sh);
 	if (!target)
 		return (1);

@@ -27,6 +27,21 @@ int	is_interactive(void)
 	return (isatty(STDIN_FILENO));
 }
 
+/*
+** bash turns off ECHOCTL so Ctrl-C at the prompt does not print `^C`.
+*/
+void	disable_echoctl(void)
+{
+	struct termios	term;
+
+	if (!is_interactive())
+		return ;
+	if (tcgetattr(STDIN_FILENO, &term) == -1)
+		return ;
+	term.c_lflag &= ~ECHOCTL;
+	tcsetattr(STDIN_FILENO, TCSANOW, &term);
+}
+
 /* Reads one line from stdin, without the '\n'. NULL at EOF with no data. */
 static char	*read_plain_line(void)
 {

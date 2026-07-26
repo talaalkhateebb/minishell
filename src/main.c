@@ -23,6 +23,23 @@ static void	check_signal_after_readline(t_shell *sh)
 	}
 }
 
+/* bash: `$_` is the last argument of the last simple command. */
+static void	update_underscore(t_cmd *cmds, t_shell *sh)
+{
+	t_cmd	*last;
+	int		i;
+
+	last = cmds;
+	while (last && last->next)
+		last = last->next;
+	if (!last || !last->argv || !last->argv[0])
+		return ;
+	i = 0;
+	while (last->argv[i + 1])
+		i++;
+	env_set(sh, "_", last->argv[i]);
+}
+
 static void	run_one_line(char *line, t_shell *sh)
 {
 	t_cmd	*cmds;
@@ -35,6 +52,7 @@ static void	run_one_line(char *line, t_shell *sh)
 	if (!cmds)
 		return ;
 	sh->last_status = execute(cmds, sh);
+	update_underscore(cmds, sh);
 	free_cmds(cmds);
 }
 
@@ -44,6 +62,7 @@ static void	prompt_loop(t_shell *sh)
 
 	while (1)
 	{
+		disable_echoctl();
 		line = ms_readline("minishell$ ");
 		check_signal_after_readline(sh);
 		if (!line)
@@ -67,6 +86,7 @@ int	main(int argc, char **argv, char **envp)
 		return (1);
 	sh.last_status = 0;
 	setup_signals_interactive();
+	disable_echoctl();
 	prompt_loop(&sh);
 	env_free(&sh);
 	return (sh.last_status);

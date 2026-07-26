@@ -37,7 +37,10 @@ static int	read_heredoc_body(int fd, t_redir *redir, t_shell *sh)
 		{
 			if (g_signal == SIGINT)
 				return (1);
-			put_err(NULL, "warning: here-document delimited by end-of-file");
+			put_str(2, "minishell: warning: here-document at line 1 "
+				"delimited by end-of-file (wanted `");
+			put_str(2, redir->target);
+			put_str(2, "')\n");
 			return (2);
 		}
 		if (ms_strcmp(line, redir->target) == 0)

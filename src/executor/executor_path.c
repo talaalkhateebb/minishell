@@ -43,17 +43,6 @@ static char	*join_path(const char *dir, const char *cmd)
 	return (path);
 }
 
-static int	has_slash(const char *s)
-{
-	while (*s)
-	{
-		if (*s == '/')
-			return (1);
-		s++;
-	}
-	return (0);
-}
-
 static char	*next_dir(char **cursor)
 {
 	char	*start;
@@ -89,7 +78,7 @@ static char	*search_in_path(char *cmd, t_shell *sh)
 			return (NULL);
 		candidate = join_path(dir, cmd);
 		free(dir);
-		if (candidate && access(candidate, X_OK) == 0)
+		if (candidate && is_exec_file(candidate))
 			return (candidate);
 		free(candidate);
 	}
@@ -102,7 +91,7 @@ char	*find_executable(char *cmd, t_shell *sh)
 		return (NULL);
 	if (has_slash(cmd))
 	{
-		if (access(cmd, X_OK) == 0)
+		if (is_exec_file(cmd))
 			return (ms_strdup(cmd));
 		return (NULL);
 	}

@@ -27,7 +27,7 @@ int	is_builtin(const char *cmd)
 	if (ms_strcmp(cmd, "echo") == 0 || ms_strcmp(cmd, "cd") == 0
 		|| ms_strcmp(cmd, "pwd") == 0 || ms_strcmp(cmd, "export") == 0
 		|| ms_strcmp(cmd, "unset") == 0 || ms_strcmp(cmd, "env") == 0
-		|| ms_strcmp(cmd, "exit") == 0)
+		|| ms_strcmp(cmd, "exit") == 0 || ms_strcmp(cmd, ".") == 0)
 		return (1);
 	return (0);
 }
@@ -49,6 +49,8 @@ int	run_builtin(t_cmd *cmd, t_shell *sh)
 		return (builtin_unset(cmd->argv, sh));
 	if (ms_strcmp(name, "env") == 0)
 		return (builtin_env(sh));
+	if (ms_strcmp(name, ".") == 0)
+		return (builtin_dot(cmd->argv));
 	return (builtin_exit(cmd->argv, sh));
 }
 

@@ -22,6 +22,7 @@
 # include <sys/stat.h>
 # include <sys/types.h>
 # include <sys/wait.h>
+# include <termios.h>
 # include <unistd.h>
 # include <readline/history.h>
 # include <readline/readline.h>
@@ -83,11 +84,13 @@ int		is_op_char(char c);
 t_cmd	*parse_tokens(t_token *toks, t_shell *sh);
 t_cmd	*cmd_new(void);
 int		argv_append(t_cmd *cmd, char *value);
+int		word_append(t_cmd *cmd, t_token *tok, t_shell *sh);
 int		redir_append(t_cmd *cmd, t_token_type type, char *target, int expand);
 void	syntax_error(const char *near, t_shell *sh);
 
 /* === Expander — internal to the frontend === */
 char	*expand_word(const char *s, t_shell *sh);
+int		expand_to_argv(t_cmd *cmd, const char *s, t_shell *sh);
 char	*strip_quotes(const char *s);
 int		is_quoted(const char *s);
 char	*append_str(char *res, const char *add);
@@ -113,6 +116,9 @@ int		execute(t_cmd *cmds, t_shell *sh);
 int		is_builtin(const char *cmd);
 int		run_builtin(t_cmd *cmd, t_shell *sh);
 char	*find_executable(char *cmd, t_shell *sh);
+int		has_slash(const char *s);
+int		is_exec_file(const char *path);
+int		report_exec_error(char *cmd);
 int		run_pipeline(t_cmd *cmds, t_shell *sh);
 int		apply_redirs(t_cmd *cmd);
 int		process_heredocs(t_cmd *cmds, t_shell *sh);
@@ -139,6 +145,7 @@ void	print_exports(t_shell *sh);
 int		builtin_cd(char **argv, t_shell *sh);
 int		builtin_pwd(void);
 int		builtin_exit(char **argv, t_shell *sh);
+int		builtin_dot(char **argv);
 
 /* === Shared utils (split: utils_a / utils_b) === */
 char	*ms_strdup(const char *s);
@@ -152,6 +159,7 @@ int		is_var_start(char c);
 void	free_array(char **arr);
 char	*ms_readline(const char *prompt);
 int		is_interactive(void);
+void	disable_echoctl(void);
 void	put_str(int fd, const char *s);
 void	put_err(const char *prefix, const char *msg);
 
