@@ -50,9 +50,9 @@ char	*append_char(char *res, char c)
 
 /*
 ** On entry s[*i] == '$'. Consumes the whole $-expression and returns its
-** value as a fresh string. `$?` becomes the last exit status, `$NAME`
-** becomes the env value (empty when unset), and a `$` followed by
-** anything else is left as a literal `$`.
+** value as a fresh string. `$?` becomes the last exit status, `$$` the
+** shell PID, `$NAME` the env value (empty when unset), and a `$` followed
+** by anything else is left as a literal `$`.
 */
 char	*expand_dollar(const char *s, int *i, t_shell *sh)
 {
@@ -63,6 +63,8 @@ char	*expand_dollar(const char *s, int *i, t_shell *sh)
 	(*i)++;
 	if (s[*i] == '?')
 		return ((*i)++, ms_itoa(sh->last_status));
+	if (s[*i] == '$')
+		return ((*i)++, ms_itoa((int)getpid()));
 	/*
 	** bash: `$0`…`$9` are positional. Only one digit is consumed without
 	** braces, so `$1230` is `$1` + `230`. `$0` is the shell name.
