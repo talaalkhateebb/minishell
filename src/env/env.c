@@ -89,6 +89,8 @@ int	env_init(t_shell *sh, char **envp)
 	int	i;
 
 	sh->last_status = 0;
+	sh->should_exit = 0;
+	sh->syntax_token = NULL;
 	n = count_envp(envp);
 	sh->envp = malloc(sizeof(char *) * (n + 1));
 	if (!sh->envp)
@@ -111,6 +113,8 @@ void	env_free(t_shell *sh)
 {
 	free_array(sh->envp);
 	sh->envp = NULL;
+	free(sh->syntax_token);
+	sh->syntax_token = NULL;
 }
 
 /*

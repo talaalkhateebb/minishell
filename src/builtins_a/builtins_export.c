@@ -54,7 +54,11 @@ static int	export_one(char *arg, t_shell *sh)
 		return (0);
 	}
 	key = ms_substr(arg, 0, eq);
-	return (env_set(sh, key, arg + eq + 1), free(key), 0);
+	if (!key)
+		return (1);
+	if (env_set(sh, key, arg + eq + 1))
+		return (free(key), 1);
+	return (free(key), 0);
 }
 
 int	builtin_export(char **argv, t_shell *sh)

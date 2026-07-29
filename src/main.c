@@ -23,11 +23,17 @@ static void	check_signal_after_readline(t_shell *sh)
 	}
 }
 
-/* bash: `$_` is the last argument of the last simple command. */
+/*
+** bash: `$_` is the last argument of the last simple command. For `export`
+** assignment words (`FOO=bar`), bash stores only the name (`FOO`).
+*/
 static void	update_underscore(t_cmd *cmds, t_shell *sh)
 {
 	t_cmd	*last;
+	char	*arg;
+	char	*name;
 	int		i;
+	int		eq;
 
 	last = cmds;
 	while (last && last->next)
@@ -37,7 +43,24 @@ static void	update_underscore(t_cmd *cmds, t_shell *sh)
 	i = 0;
 	while (last->argv[i + 1])
 		i++;
-	env_set(sh, "_", last->argv[i]);
+	arg = last->argv[i];
+	if (ms_strcmp(last->argv[0], "export") == 0)
+	{
+		eq = 0;
+		while (arg[eq] && arg[eq] != '=')
+			eq++;
+		if (arg[eq] == '=')
+		{
+			name = ms_substr(arg, 0, eq);
+			if (name)
+			{
+				env_set(sh, "_", name);
+				free(name);
+			}
+			return ;
+		}
+	}
+	env_set(sh, "_", arg);
 }
 
 static void	run_one_line(char *line, t_shell *sh)
@@ -73,6 +96,8 @@ static void	prompt_loop(t_shell *sh)
 		}
 		run_one_line(line, sh);
 		free(line);
+		if (sh->should_exit)
+			break ;
 	}
 }
 

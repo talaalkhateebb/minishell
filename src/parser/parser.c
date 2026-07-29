@@ -22,12 +22,16 @@
 ** sh->last_status (2 for a syntax error, as bash does).
 */
 
+/*
+** Stash the token and status only — the message is printed after any
+** pending here-documents are read, matching bash's order for
+** `cat << EOF >` (body first, then the syntax error).
+*/
 void	syntax_error(const char *near, t_shell *sh)
 {
-	put_str(2, "minishell: syntax error near unexpected token `");
-	put_str(2, near);
-	put_str(2, "'\n");
 	sh->last_status = 2;
+	free(sh->syntax_token);
+	sh->syntax_token = ms_strdup(near);
 }
 
 t_cmd	*parse_line(const char *line, t_shell *sh)

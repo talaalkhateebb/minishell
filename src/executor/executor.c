@@ -57,6 +57,8 @@ int	run_builtin(t_cmd *cmd, t_shell *sh)
 /*
 ** Redirections are applied around the built-in and then undone, so a
 ** `export FOO=bar > file` doesn't leave the shell's stdout redirected.
+** Saved fds are always closed — including when `exit` returns via
+** should_exit instead of calling exit() immediately.
 */
 static int	execute_builtin_parent(t_cmd *cmd, t_shell *sh)
 {
@@ -64,8 +66,18 @@ static int	execute_builtin_parent(t_cmd *cmd, t_shell *sh)
 	int	saved_out;
 	int	status;
 
+	if (!cmd->redirs)
+		return (run_builtin(cmd, sh));
 	saved_in = dup(STDIN_FILENO);
 	saved_out = dup(STDOUT_FILENO);
+	if (saved_in == -1 || saved_out == -1)
+	{
+		if (saved_in != -1)
+			close(saved_in);
+		if (saved_out != -1)
+			close(saved_out);
+		return (1);
+	}
 	if (apply_redirs(cmd) == -1)
 		status = 1;
 	else
@@ -89,6 +101,14 @@ static int	redirs_only(t_cmd *cmd)
 
 	saved_in = dup(STDIN_FILENO);
 	saved_out = dup(STDOUT_FILENO);
+	if (saved_in == -1 || saved_out == -1)
+	{
+		if (saved_in != -1)
+			close(saved_in);
+		if (saved_out != -1)
+			close(saved_out);
+		return (1);
+	}
 	status = 0;
 	if (apply_redirs(cmd) == -1)
 		status = 1;
@@ -101,13 +121,21 @@ static int	redirs_only(t_cmd *cmd)
 
 int	execute(t_cmd *cmds, t_shell *sh)
 {
+	int	status;
+
 	if (!cmds)
 		return (sh->last_status);
 	if (process_heredocs(cmds, sh) == -1)
 		return (close_heredocs(cmds), 130);
 	if (!cmds->next && !cmds->argv[0])
-		return (redirs_only(cmds));
+	{
+		status = redirs_only(cmds);
+		return (close_heredocs(cmds), status);
+	}
 	if (!cmds->next && is_builtin(cmds->argv[0]))
-		return (execute_builtin_parent(cmds, sh));
+	{
+		status = execute_builtin_parent(cmds, sh);
+		return (close_heredocs(cmds), status);
+	}
 	return (run_pipeline(cmds, sh));
 }

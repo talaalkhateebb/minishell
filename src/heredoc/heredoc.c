@@ -69,6 +69,8 @@ static int	fill_heredoc(t_redir *redir, t_shell *sh)
 	if (pipe(fds) == -1)
 		return (-1);
 	saved_stdin = dup(STDIN_FILENO);
+	if (saved_stdin == -1)
+		return (close(fds[0]), close(fds[1]), -1);
 	g_signal = 0;
 	setup_signals_heredoc();
 	result = read_heredoc_body(fds[1], redir, sh);

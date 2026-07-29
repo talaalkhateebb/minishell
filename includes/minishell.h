@@ -64,6 +64,8 @@ typedef struct s_shell
 {
 	char	**envp;
 	int		last_status;
+	int		should_exit;
+	char	*syntax_token;
 }	t_shell;
 
 extern volatile sig_atomic_t	g_signal;

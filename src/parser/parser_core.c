@@ -180,11 +180,32 @@ static int	parse_loop(t_cmd *cur, t_token *toks, t_shell *sh)
 t_cmd	*parse_tokens(t_token *toks, t_shell *sh)
 {
 	t_cmd	*head;
+	int		status;
 
 	head = cmd_new();
 	if (!head)
 		return (NULL);
 	if (parse_loop(head, toks, sh))
+	{
+		/*
+		** bash still reads any here-documents collected before the syntax
+		** error (`cat << EOF >` prompts for the body, then reports the error).
+		*/
+		status = sh->last_status;
+		if (process_heredocs(head, sh) == -1)
+			status = sh->last_status;
+		else
+			sh->last_status = status;
+		close_heredocs(head);
+		if (sh->syntax_token && status == 2)
+		{
+			put_str(2, "minishell: syntax error near unexpected token `");
+			put_str(2, sh->syntax_token);
+			put_str(2, "'\n");
+		}
+		free(sh->syntax_token);
+		sh->syntax_token = NULL;
 		return (free_cmds(head), NULL);
+	}
 	return (head);
 }

@@ -43,6 +43,8 @@ static int	dup_heredoc(t_redir *r)
 		return (-1);
 	if (dup2(r->heredoc_fd, STDIN_FILENO) == -1)
 		return (-1);
+	close(r->heredoc_fd);
+	r->heredoc_fd = -1;
 	return (0);
 }
 

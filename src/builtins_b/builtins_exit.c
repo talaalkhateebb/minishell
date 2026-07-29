@@ -51,29 +51,31 @@ static int	parse_exit_code(const char *s, int *code)
 
 /*
 ** `exit` prints "exit" and leaves with the last status. A non-numeric
-** argument is a fatal error (status 2, matching bash 5 / common evaluators).
-** Too many arguments is NOT fatal: bash complains and stays in the shell,
-** so this returns 1 instead of exiting.
+** argument is a fatal error (status 255). Too many arguments is NOT
+** fatal: bash complains and stays in the shell, so this returns 1
+** instead of exiting.
 */
 int	builtin_exit(char **argv, t_shell *sh)
 {
 	int	code;
 
-	code = 0;
 	if (is_interactive())
 		put_str(1, "exit\n");
-	if (argv[1] && parse_exit_code(argv[1], &code) == -1)
+	if (!argv[1])
+	{
+		sh->should_exit = 1;
+		return (sh->last_status);
+	}
+	if (parse_exit_code(argv[1], &code) == -1)
 	{
 		put_str(2, "minishell: exit: ");
 		put_str(2, argv[1]);
 		put_str(2, ": numeric argument required\n");
-		env_free(sh);
-		exit(255);
+		sh->should_exit = 1;
+		return (255);
 	}
-	if (argv[1] && argv[2])
+	if (argv[2])
 		return (put_err("exit", "too many arguments"), 1);
-	if (!argv[1])
-		code = sh->last_status;
-	env_free(sh);
-	exit(code);
+	sh->should_exit = 1;
+	return (code);
 }
