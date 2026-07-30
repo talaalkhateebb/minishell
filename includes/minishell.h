@@ -131,6 +131,7 @@ int		execute(t_cmd *cmds, t_shell *sh);
 int		is_builtin(const char *cmd);
 int		run_builtin(t_cmd *cmd, t_shell *sh);
 char	*find_executable(char *cmd, t_shell *sh);
+int		path_is_unset(t_shell *sh);
 int		has_slash(const char *s);
 int		is_exec_file(const char *path);
 int		report_exec_error(char *cmd);
@@ -159,7 +160,10 @@ void	print_exports(t_shell *sh);
 
 /* === Built-ins B (filesystem / exit) === */
 int		builtin_cd(char **argv, t_shell *sh);
-int		builtin_pwd(void);
+int		builtin_pwd(t_shell *sh);
+char	*cd_current_pwd(t_shell *sh);
+char	*cd_logical_path(t_shell *sh, const char *target);
+int		cd_move(const char *target, const char *logical);
 int		builtin_exit(char **argv, t_shell *sh);
 int		builtin_dot(char **argv);
 
@@ -172,6 +176,7 @@ char	*ms_substr(const char *s, size_t start, size_t len);
 char	*ms_itoa(int n);
 int		is_var_char(char c);
 int		is_var_start(char c);
+int		is_identifier(const char *s);
 void	free_array(char **arr);
 char	*ms_readline(const char *prompt);
 int		is_interactive(void);

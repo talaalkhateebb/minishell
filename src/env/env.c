@@ -109,6 +109,8 @@ int	env_init(t_shell *sh, char **envp)
 		return (1);
 	if (copy_envp(sh, envp))
 		return (1);
+	if (env_find_index(sh, "OLDPWD") != -1)
+		env_set(sh, "OLDPWD", NULL);
 	return (update_shlvl(sh), 0);
 }
 

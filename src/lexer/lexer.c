@@ -65,17 +65,20 @@ static int	lex_operator(const char *line, int *i, t_token **head)
 	return (0);
 }
 
+/* Returns 0, or the opening quote character when it is never closed. */
 static int	lex_word(const char *line, int *i, t_token **head)
 {
 	int	start;
+	int	quote;
 
 	start = *i;
 	while (line[*i] && !is_space(line[*i]) && !is_op_char(line[*i]))
 	{
 		if (line[*i] == '"' || line[*i] == '\'')
 		{
+			quote = line[*i];
 			if (!skip_quoted(line, i))
-				return (1);
+				return (quote);
 		}
 		else
 			(*i)++;
@@ -98,11 +101,11 @@ t_token	*tokenize(const char *line, int *err)
 			i++;
 		else if (is_op_char(line[i]))
 			lex_operator(line, &i, &head);
-		else if (lex_word(line, &i, &head))
+		else
 		{
-			*err = 1;
-			free_tokens(head);
-			return (NULL);
+			*err = lex_word(line, &i, &head);
+			if (*err)
+				return (free_tokens(head), NULL);
 		}
 	}
 	return (head);

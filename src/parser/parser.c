@@ -38,13 +38,18 @@ t_cmd	*parse_line(const char *line, t_shell *sh)
 {
 	t_token	*tokens;
 	t_cmd	*cmds;
+	char	quote[2];
 	int		err;
 
 	tokens = tokenize(line, &err);
 	if (err)
 	{
+		quote[0] = (char)err;
+		quote[1] = '\0';
 		put_str(2, "minishell: unexpected EOF while looking for"
-			" matching quote\n");
+			" matching `");
+		put_str(2, quote);
+		put_str(2, "'\n");
 		sh->last_status = 2;
 		return (NULL);
 	}

@@ -36,6 +36,23 @@ void	put_err(const char *prefix, const char *msg)
 	put_str(2, "\n");
 }
 
+/* A bare name: a letter or '_', then letters, digits and '_' only. */
+int	is_identifier(const char *s)
+{
+	int	i;
+
+	if (!s || !is_var_start(s[0]))
+		return (0);
+	i = 1;
+	while (s[i])
+	{
+		if (!is_var_char(s[i]))
+			return (0);
+		i++;
+	}
+	return (1);
+}
+
 int	read_pid(void)
 {
 	int		fd;

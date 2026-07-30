@@ -85,6 +85,18 @@ static char	*search_in_path(char *cmd, t_shell *sh)
 	return (NULL);
 }
 
+/*
+** bash reports a bare name as "No such file or directory" rather than
+** "command not found" when there is no PATH at all to search.
+*/
+int	path_is_unset(t_shell *sh)
+{
+	char	*path;
+
+	path = env_get(sh, "PATH");
+	return (!path || !*path);
+}
+
 char	*find_executable(char *cmd, t_shell *sh)
 {
 	if (!cmd || !*cmd)

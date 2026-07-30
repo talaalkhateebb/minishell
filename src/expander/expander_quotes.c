@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   expander_quotes.c                                  :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: talaalkh <talaalkh@student.42.fr>           +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/07/19 11:00:00 by talaalkh          #+#    #+#             */
-/*   Updated: 2026/07/19 11:00:00 by talaalkh         ###   ########.fr       */
+/*                                                          :::      :::::::: */
+/*   expander_quotes.c                                    :+:      :+:    :+: */
+/*                                                        +:+ +:+         +:+ */
+/*   By: talaalkh <talaalkh@student.42.fr>                 +#+  +:+       +#+ */
+/*                                                          +#+#+#+#+#+   +#+ */
+/*   Created: 2026/07/19 11:00:00 by talaalkh                      #+#    #+# */
+/*   Updated: 2026/07/19 11:00:00 by talaalkh               ###   ########.fr */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,11 +30,13 @@ char	*handle_double(const char *s, int *i, char *res, t_shell *sh)
 	char	*val;
 
 	(*i)++;
-	while (s[*i] && s[*i] != '"')
+	while (s[*i] && s[*i] != '"' && res)
 	{
 		if (s[*i] == '$' && s[*i + 1])
 		{
 			val = expand_dollar(s, i, sh);
+			if (!val)
+				return (free(res), NULL);
 			res = append_str(res, val);
 			free(val);
 		}
@@ -44,7 +46,7 @@ char	*handle_double(const char *s, int *i, char *res, t_shell *sh)
 			(*i)++;
 		}
 	}
-	if (s[*i] == '"')
+	if (res && s[*i] == '"')
 		(*i)++;
 	return (res);
 }
@@ -57,7 +59,7 @@ char	*expand_word(const char *s, t_shell *sh)
 
 	res = ms_strdup("");
 	i = 0;
-	while (s && s[i])
+	while (s && s[i] && res)
 	{
 		if (s[i] == '\'')
 			res = handle_single(s, &i, res);
@@ -66,6 +68,8 @@ char	*expand_word(const char *s, t_shell *sh)
 		else if (s[i] == '$' && s[i + 1])
 		{
 			val = expand_dollar(s, &i, sh);
+			if (!val)
+				return (free(res), NULL);
 			res = append_str(res, val);
 			free(val);
 		}

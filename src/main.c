@@ -73,6 +73,7 @@ int	main(int argc, char **argv, char **envp)
 	setup_signals_interactive();
 	disable_echoctl();
 	prompt_loop(&sh);
+	rl_clear_history();
 	env_free(&sh);
 	return (sh.last_status);
 }

@@ -70,32 +70,35 @@ static void	cd_error(const char *target)
 int	builtin_cd(char **argv, t_shell *sh)
 {
 	char	*target;
-	char	old[4096];
-	char	new[4096];
+	char	*old;
+	char	*new;
 
 	if (argv[1] && argv[2])
 		return (put_err("cd", "too many arguments"), 1);
+	if (argv[1] && !argv[1][0])
+		return (0);
 	target = resolve_cd_target(argv, sh);
 	if (!target)
 		return (1);
-	if (!getcwd(old, sizeof(old)))
-		old[0] = '\0';
-	if (chdir(target) == -1)
-		return (cd_error(target), 1);
-	if (old[0])
-		env_set(sh, "OLDPWD", old);
-	if (getcwd(new, sizeof(new)))
-		env_set(sh, "PWD", new);
-	return (0);
+	old = cd_current_pwd(sh);
+	new = cd_logical_path(sh, target);
+	if (!old || !new)
+		return (free(old), free(new), 1);
+	if (cd_move(target, new) == -1)
+		return (free(old), free(new), cd_error(target), 1);
+	env_set(sh, "OLDPWD", old);
+	env_set(sh, "PWD", new);
+	return (free(old), free(new), 0);
 }
 
-int	builtin_pwd(void)
+int	builtin_pwd(t_shell *sh)
 {
-	char	buf[4096];
+	char	*pwd;
 
-	if (!getcwd(buf, sizeof(buf)))
-		return (put_err("pwd", strerror(errno)), 1);
-	put_str(1, buf);
+	pwd = cd_current_pwd(sh);
+	if (!pwd || !pwd[0])
+		return (free(pwd), put_err("pwd", strerror(errno)), 1);
+	put_str(1, pwd);
 	put_str(1, "\n");
-	return (0);
+	return (free(pwd), 0);
 }

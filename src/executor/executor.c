@@ -42,7 +42,7 @@ int	run_builtin(t_cmd *cmd, t_shell *sh)
 	if (ms_strcmp(name, "cd") == 0)
 		return (builtin_cd(cmd->argv, sh));
 	if (ms_strcmp(name, "pwd") == 0)
-		return (builtin_pwd());
+		return (builtin_pwd(sh));
 	if (ms_strcmp(name, "export") == 0)
 		return (builtin_export(cmd->argv, sh));
 	if (ms_strcmp(name, "unset") == 0)

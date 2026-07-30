@@ -38,6 +38,7 @@ SRCS = \
 	src/parser/parser_core.c \
 	src/parser/parser_utils.c \
 	src/expander/expander.c \
+	src/expander/expander_dollar.c \
 	src/expander/expander_quotes.c \
 	src/expander/expander_utils.c \
 	src/env/env.c \
@@ -56,6 +57,7 @@ SRCS = \
 	src/pipes/pipes_utils.c \
 	src/heredoc/heredoc.c \
 	src/builtins_b/builtins_b.c \
+	src/builtins_b/builtins_cd.c \
 	src/builtins_b/builtins_exit.c \
 	src/utils/utils_a.c \
 	src/utils/utils_b.c \

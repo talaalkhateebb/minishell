@@ -45,6 +45,11 @@ static void	run_child(t_cmd *cmd, t_shell *sh)
 	if (is_builtin(cmd->argv[0]))
 		exit(run_builtin(cmd, sh));
 	exec_path = find_executable(cmd->argv[0], sh);
+	if (!exec_path && !has_slash(cmd->argv[0]) && path_is_unset(sh))
+	{
+		put_err(cmd->argv[0], "No such file or directory");
+		exit(127);
+	}
 	if (!exec_path)
 		exit(report_exec_error(cmd->argv[0]));
 	env = env_to_array(sh);
