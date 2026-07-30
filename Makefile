@@ -36,7 +36,9 @@ SRCS = \
 	src/parser/parser.c \
 	src/parser/parser_build.c \
 	src/parser/parser_core.c \
+	src/parser/parser_utils.c \
 	src/expander/expander.c \
+	src/expander/expander_quotes.c \
 	src/expander/expander_utils.c \
 	src/env/env.c \
 	src/env/env_more.c \

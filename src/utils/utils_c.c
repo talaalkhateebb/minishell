@@ -35,3 +35,25 @@ void	put_err(const char *prefix, const char *msg)
 	put_str(2, msg);
 	put_str(2, "\n");
 }
+
+int	read_pid(void)
+{
+	int		fd;
+	char	buf[32];
+	int		n;
+	int		pid;
+
+	fd = open("/proc/self/stat", O_RDONLY);
+	if (fd < 0)
+		return (-1);
+	n = read(fd, buf, sizeof(buf) - 1);
+	close(fd);
+	if (n <= 0)
+		return (-1);
+	buf[n] = '\0';
+	pid = 0;
+	n = 0;
+	while (buf[n] && buf[n] >= '0' && buf[n] <= '9')
+		pid = pid * 10 + (buf[n++] - '0');
+	return (pid);
+}

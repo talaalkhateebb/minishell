@@ -16,14 +16,14 @@
 ** Applied left to right, so `> a > b` leaves stdout on b (and still
 ** creates a), exactly like bash. */
 
+/*
+** On some systems open("/", O_CREAT|…) returns EEXIST ("File exists").
+** bash on Linux (and the evaluator) reports "Is a directory" instead.
+*/
 static int	open_target(t_redir *r)
 {
 	struct stat	st;
 
-	/*
-	** On some systems open("/", O_CREAT|…) returns EEXIST ("File exists").
-	** bash on Linux (and the evaluator) reports "Is a directory" instead.
-	*/
 	if (r->type != T_REDIR_IN && stat(r->target, &st) == 0
 		&& S_ISDIR(st.st_mode))
 	{

@@ -73,6 +73,8 @@ int	builtin_cd(char **argv, t_shell *sh)
 	char	old[4096];
 	char	new[4096];
 
+	if (argv[1] && argv[2])
+		return (put_err("cd", "too many arguments"), 1);
 	target = resolve_cd_target(argv, sh);
 	if (!target)
 		return (1);

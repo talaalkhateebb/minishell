@@ -32,39 +32,6 @@ static void	child_wire_pipes(int (*pipes)[2], int n, int idx)
 	close_pipes(pipes, n - 1);
 }
 
-/*
-** Signals go back to their defaults here: a child must be killable with
-** Ctrl-C, and it is the parent that ignores SIGINT while it waits.
-*/
-/*
-** bash: if execve fails with ENOEXEC (e.g. empty +x file), retry as a
-** /bin/sh script — that is why `./file_test` on an empty file exits 0.
-*/
-static void	exec_as_shell_script(char *path, char **argv, char **env)
-{
-	char	**new_argv;
-	int		n;
-	int		i;
-
-	n = 0;
-	while (argv[n])
-		n++;
-	new_argv = malloc(sizeof(char *) * (n + 2));
-	if (!new_argv)
-		return ;
-	new_argv[0] = "/bin/sh";
-	new_argv[1] = path;
-	i = 1;
-	while (argv[i])
-	{
-		new_argv[i + 1] = argv[i];
-		i++;
-	}
-	new_argv[i + 1] = NULL;
-	execve("/bin/sh", new_argv, env);
-	free(new_argv);
-}
-
 static void	run_child(t_cmd *cmd, t_shell *sh)
 {
 	char	*exec_path;

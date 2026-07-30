@@ -41,7 +41,6 @@ char	*ms_itoa(int n)
 {
 	char			*out;
 	int				len;
-	int				stop;
 	unsigned int	nb;
 
 	len = num_len(n);
@@ -53,14 +52,10 @@ char	*ms_itoa(int n)
 	{
 		out[0] = '-';
 		nb = (unsigned int)(-(long)n);
-		stop = 1;
 	}
 	else
-	{
 		nb = (unsigned int)n;
-		stop = 0;
-	}
-	while (len > stop)
+	while (len > (n < 0))
 	{
 		out[--len] = '0' + (nb % 10);
 		nb /= 10;

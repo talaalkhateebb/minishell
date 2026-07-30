@@ -66,6 +66,7 @@ typedef struct s_shell
 	int		last_status;
 	int		should_exit;
 	char	*syntax_token;
+	int		pid;
 }	t_shell;
 
 extern volatile sig_atomic_t	g_signal;
@@ -89,8 +90,18 @@ int		argv_append(t_cmd *cmd, char *value);
 int		word_append(t_cmd *cmd, t_token *tok, t_shell *sh);
 int		redir_append(t_cmd *cmd, t_token_type type, char *target, int expand);
 void	syntax_error(const char *near, t_shell *sh);
+int		is_redir(t_token_type type);
+int		is_reserved_word(const char *s);
+char	*expand_redir_target(t_token *target, t_shell *sh);
 
 /* === Expander — internal to the frontend === */
+struct s_expand
+{
+	t_cmd	*cmd;
+	char	*cur;
+	t_shell	*sh;
+	int		quoted;
+};
 char	*expand_word(const char *s, t_shell *sh);
 int		expand_to_argv(t_cmd *cmd, const char *s, t_shell *sh);
 char	*strip_quotes(const char *s);
@@ -99,6 +110,8 @@ char	*append_str(char *res, const char *add);
 char	*append_char(char *res, char c);
 char	*expand_dollar(const char *s, int *i, t_shell *sh);
 char	*expand_heredoc_line(const char *s, t_shell *sh);
+char	*handle_single(const char *s, int *i, char *res);
+char	*handle_double(const char *s, int *i, char *res, t_shell *sh);
 
 /* === Env API — A owns, B reads === */
 int		env_init(t_shell *sh, char **envp);
@@ -121,6 +134,7 @@ char	*find_executable(char *cmd, t_shell *sh);
 int		has_slash(const char *s);
 int		is_exec_file(const char *path);
 int		report_exec_error(char *cmd);
+void	exec_as_shell_script(char *path, char **argv, char **env);
 int		run_pipeline(t_cmd *cmds, t_shell *sh);
 int		apply_redirs(t_cmd *cmd);
 int		process_heredocs(t_cmd *cmds, t_shell *sh);
@@ -164,5 +178,6 @@ int		is_interactive(void);
 void	disable_echoctl(void);
 void	put_str(int fd, const char *s);
 void	put_err(const char *prefix, const char *msg);
+int		read_pid(void);
 
 #endif

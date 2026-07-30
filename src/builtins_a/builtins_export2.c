@@ -58,6 +58,22 @@ static char	**copy_env_ptrs(t_shell *sh, int *count)
 	return (copy);
 }
 
+static int	env_name_cmp(const char *a, const char *b)
+{
+	while (*a && *b && *a != '=' && *b != '=' && *a == *b)
+	{
+		a++;
+		b++;
+	}
+	if (*a == '=' && *b == '=')
+		return (0);
+	if (*a == '=')
+		return (-1);
+	if (*b == '=')
+		return (1);
+	return ((unsigned char)*a - (unsigned char)*b);
+}
+
 static void	sort_ptrs(char **arr, int n)
 {
 	int		i;
@@ -71,7 +87,7 @@ static void	sort_ptrs(char **arr, int n)
 		i = 0;
 		while (i + 1 < n)
 		{
-			if (ms_strcmp(arr[i], arr[i + 1]) > 0)
+			if (env_name_cmp(arr[i], arr[i + 1]) > 0)
 			{
 				tmp = arr[i];
 				arr[i] = arr[i + 1];
