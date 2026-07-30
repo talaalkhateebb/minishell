@@ -73,7 +73,6 @@ int	builtin_cd(char **argv, t_shell *sh)
 	char	old[4096];
 	char	new[4096];
 
-	/* bash 3.2 ignores extra args: `cd a b` only tries `a`. */
 	target = resolve_cd_target(argv, sh);
 	if (!target)
 		return (1);

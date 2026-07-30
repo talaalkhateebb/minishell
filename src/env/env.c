@@ -96,11 +96,16 @@ int	env_init(t_shell *sh, char **envp)
 	if (!sh->envp)
 		return (1);
 	i = 0;
-	while (i < n)
+	n = 0;
+	while (envp && envp[i])
 	{
-		sh->envp[i] = ms_strdup(envp[i]);
-		if (!sh->envp[i])
-			return (1);
+		if (!env_key_match(envp[i], "_"))
+		{
+			sh->envp[n] = ms_strdup(envp[i]);
+			if (!sh->envp[n])
+				return (1);
+			n++;
+		}
 		i++;
 	}
 	sh->envp[n] = NULL;
