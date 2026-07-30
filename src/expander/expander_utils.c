@@ -49,6 +49,21 @@ char	*append_char(char *res, char c)
 }
 
 /*
+** bash: `$0`…`$9` are positional. Only one digit is consumed without
+** braces, so `$1230` is `$1` + `230`. `$0` is the shell name.
+*/
+static char	*expand_dollar_positional(const char *s, int *i)
+{
+	if (s[*i] >= '0' && s[*i] <= '9')
+	{
+		if (s[*i] == '0')
+			return ((*i)++, ms_strdup("minishell"));
+		return ((*i)++, ms_strdup(""));
+	}
+	return (NULL);
+}
+
+/*
 ** On entry s[*i] == '$'. Consumes the whole $-expression and returns its
 ** value as a fresh string. `$?` becomes the last exit status, `$$` the
 ** shell PID, `$NAME` the env value (empty when unset), and a `$` followed
@@ -64,17 +79,10 @@ char	*expand_dollar(const char *s, int *i, t_shell *sh)
 	if (s[*i] == '?')
 		return ((*i)++, ms_itoa(sh->last_status));
 	if (s[*i] == '$')
-		return ((*i)++, ms_itoa((int)getpid()));
-	/*
-	** bash: `$0`…`$9` are positional. Only one digit is consumed without
-	** braces, so `$1230` is `$1` + `230`. `$0` is the shell name.
-	*/
-	if (s[*i] >= '0' && s[*i] <= '9')
-	{
-		if (s[*i] == '0')
-			return ((*i)++, ms_strdup("minishell"));
-		return ((*i)++, ms_strdup(""));
-	}
+		return ((*i)++, ms_itoa(sh->pid));
+	val = expand_dollar_positional(s, i);
+	if (val)
+		return (val);
 	if (!is_var_start(s[*i]))
 		return (ms_strdup("$"));
 	start = *i;

@@ -24,11 +24,33 @@
 ** parser already worked that out and left it in redir->expand_heredoc.
 */
 
+static void	warn_heredoc_eof(t_redir *redir)
+{
+	put_str(2, "minishell: warning: here-document at line 1 "
+		"delimited by end-of-file (wanted `");
+	put_str(2, redir->target);
+	put_str(2, "')\n");
+}
+
+static int	write_heredoc_line(int fd, char *line, t_redir *redir,
+	t_shell *sh)
+{
+	char	*expanded;
+
+	expanded = line;
+	if (redir->expand_heredoc)
+		expanded = expand_heredoc_line(line, sh);
+	put_str(fd, expanded);
+	put_str(fd, "\n");
+	if (expanded != line)
+		free(expanded);
+	return (0);
+}
+
 /* Returns 0 on the delimiter, 1 if Ctrl-C cancelled it, 2 on EOF. */
 static int	read_heredoc_body(int fd, t_redir *redir, t_shell *sh)
 {
 	char	*line;
-	char	*expanded;
 
 	while (1)
 	{
@@ -37,21 +59,12 @@ static int	read_heredoc_body(int fd, t_redir *redir, t_shell *sh)
 		{
 			if (g_signal == SIGINT)
 				return (1);
-			put_str(2, "minishell: warning: here-document at line 1 "
-				"delimited by end-of-file (wanted `");
-			put_str(2, redir->target);
-			put_str(2, "')\n");
+			warn_heredoc_eof(redir);
 			return (2);
 		}
 		if (ms_strcmp(line, redir->target) == 0)
 			return (free(line), 0);
-		expanded = line;
-		if (redir->expand_heredoc)
-			expanded = expand_heredoc_line(line, sh);
-		put_str(fd, expanded);
-		put_str(fd, "\n");
-		if (expanded != line)
-			free(expanded);
+		write_heredoc_line(fd, line, redir, sh);
 		free(line);
 	}
 }

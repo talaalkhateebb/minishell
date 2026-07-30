@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   executor_error.c                                     :+:      :+:    :+:   */
+/*   executor_error.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: talaalkh <talaalkh@student.42.fr>                 +#+  +:+       +#+        */
+/*   By: talaalkh <talaalkh@student.42.fr>           +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/07/19 11:00:00 by talaalkh                      #+#    #+#             */
-/*   Updated: 2026/07/19 11:00:00 by talaalkh               ###   ########.fr       */
+/*   Created: 2026/07/19 11:00:00 by talaalkh          #+#    #+#             */
+/*   Updated: 2026/07/19 11:00:00 by talaalkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,35 @@
 ** What a command name is, and what to say when it cannot be run.
 ** Shared by executor_path.c (which decides) and pipes.c (which reports).
 */
+
+/*
+** bash: if execve fails with ENOEXEC (e.g. empty +x file), retry as a
+** /bin/sh script — that is why `./file_test` on an empty file exits 0.
+*/
+void	exec_as_shell_script(char *path, char **argv, char **env)
+{
+	char	**new_argv;
+	int		n;
+	int		i;
+
+	n = 0;
+	while (argv[n])
+		n++;
+	new_argv = malloc(sizeof(char *) * (n + 2));
+	if (!new_argv)
+		return ;
+	new_argv[0] = "/bin/sh";
+	new_argv[1] = path;
+	i = 1;
+	while (argv[i])
+	{
+		new_argv[i + 1] = argv[i];
+		i++;
+	}
+	new_argv[i + 1] = NULL;
+	execve("/bin/sh", new_argv, env);
+	free(new_argv);
+}
 
 int	has_slash(const char *s)
 {
@@ -42,7 +71,6 @@ int	is_exec_file(const char *path)
 	return (access(path, X_OK) == 0);
 }
 
-/* Strip trailing '/' so `file/` can be diagnosed against the real `file`. */
 static void	strip_trailing_slashes(char *path)
 {
 	size_t	len;

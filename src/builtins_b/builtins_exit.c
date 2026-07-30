@@ -72,7 +72,7 @@ int	builtin_exit(char **argv, t_shell *sh)
 		put_str(2, argv[1]);
 		put_str(2, ": numeric argument required\n");
 		sh->should_exit = 1;
-		return (255);
+		return (2);
 	}
 	if (argv[2])
 		return (put_err("exit", "too many arguments"), 1);

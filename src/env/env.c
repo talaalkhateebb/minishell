@@ -25,14 +25,26 @@
 ** first `cd -` reports "OLDPWD not set" the same way bash's does.
 */
 
-static int	count_envp(char **envp)
+static long	get_shlvl_value(const char *cur)
 {
-	int	n;
+	long	lvl;
+	int		i;
+	int		neg;
 
-	n = 0;
-	while (envp && envp[n])
-		n++;
-	return (n);
+	lvl = 0;
+	if (!cur || !*cur)
+		return (0);
+	i = 0;
+	neg = 0;
+	if (cur[i] == '-' || cur[i] == '+')
+		neg = (cur[i++] == '-');
+	while (cur[i] >= '0' && cur[i] <= '9')
+		lvl = lvl * 10 + (cur[i++] - '0');
+	if (neg)
+		lvl = -lvl;
+	if (cur[i] != '\0')
+		lvl = 0;
+	return (lvl);
 }
 
 /*
@@ -41,27 +53,10 @@ static int	count_envp(char **envp)
 */
 static void	update_shlvl(t_shell *sh)
 {
-	char	*cur;
-	char	*num;
 	long	lvl;
-	int		i;
-	int		neg;
+	char	*num;
 
-	cur = env_get(sh, "SHLVL");
-	lvl = 0;
-	if (cur && *cur)
-	{
-		i = 0;
-		neg = 0;
-		if (cur[i] == '-' || cur[i] == '+')
-			neg = (cur[i++] == '-');
-		while (cur[i] >= '0' && cur[i] <= '9')
-			lvl = lvl * 10 + (cur[i++] - '0');
-		if (neg)
-			lvl = -lvl;
-		if (cur[i] != '\0')
-			lvl = 0;
-	}
+	lvl = get_shlvl_value(env_get(sh, "SHLVL"));
 	lvl++;
 	if (lvl < 0)
 		lvl = 0;
@@ -83,28 +78,36 @@ static void	update_shlvl(t_shell *sh)
 	}
 }
 
-int	env_init(t_shell *sh, char **envp)
+static int	copy_envp(t_shell *sh, char **envp)
 {
-	int	n;
 	int	i;
 
-	sh->last_status = 0;
-	sh->should_exit = 0;
-	sh->syntax_token = NULL;
-	n = count_envp(envp);
-	sh->envp = malloc(sizeof(char *) * (n + 1));
-	if (!sh->envp)
-		return (1);
 	i = 0;
-	while (i < n)
+	while (envp && envp[i])
 	{
 		sh->envp[i] = ms_strdup(envp[i]);
 		if (!sh->envp[i])
 			return (1);
 		i++;
 	}
-	sh->envp[n] = NULL;
-	if (env_set(sh, "OLDPWD", NULL))
+	sh->envp[i] = NULL;
+	return (0);
+}
+
+int	env_init(t_shell *sh, char **envp)
+{
+	int	n;
+
+	sh->last_status = 0;
+	sh->should_exit = 0;
+	sh->syntax_token = NULL;
+	n = 0;
+	while (envp && envp[n])
+		n++;
+	sh->envp = malloc(sizeof(char *) * (n + 1));
+	if (!sh->envp)
+		return (1);
+	if (copy_envp(sh, envp))
 		return (1);
 	return (update_shlvl(sh), 0);
 }
@@ -115,36 +118,4 @@ void	env_free(t_shell *sh)
 	sh->envp = NULL;
 	free(sh->syntax_token);
 	sh->syntax_token = NULL;
-}
-
-/*
-** True when `entry` ("KEY=VALUE" or bare "KEY") has exactly `key` as its
-** name. Comparing up to the '=' stops "PATHEXT=..." matching "PATH".
-*/
-int	env_key_match(const char *entry, const char *key)
-{
-	size_t	i;
-
-	i = 0;
-	while (entry[i] && entry[i] != '=' && key[i] && entry[i] == key[i])
-		i++;
-	if (key[i] != '\0')
-		return (0);
-	return (entry[i] == '=' || entry[i] == '\0');
-}
-
-int	env_find_index(t_shell *sh, const char *key)
-{
-	int	i;
-
-	if (!sh->envp || !key)
-		return (-1);
-	i = 0;
-	while (sh->envp[i])
-	{
-		if (env_key_match(sh->envp[i], key))
-			return (i);
-		i++;
-	}
-	return (-1);
 }

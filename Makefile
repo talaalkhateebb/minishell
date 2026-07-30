@@ -26,6 +26,7 @@ HAS_LIBFT	:= $(shell test -f $(LIBFT_DIR)/Makefile && echo 1 || echo 0)
 ifeq ($(HAS_LIBFT),1)
 	INCLUDES	+= -I $(LIBFT_DIR)
 	LIBS		+= -L $(LIBFT_DIR) -lft
+	LIBFT_DEPS	= $(LIBFT)
 endif
 
 SRCS = \
@@ -35,7 +36,9 @@ SRCS = \
 	src/parser/parser.c \
 	src/parser/parser_build.c \
 	src/parser/parser_core.c \
+	src/parser/parser_utils.c \
 	src/expander/expander.c \
+	src/expander/expander_quotes.c \
 	src/expander/expander_utils.c \
 	src/env/env.c \
 	src/env/env_more.c \
@@ -63,17 +66,12 @@ OBJS = $(SRCS:.c=.o)
 
 all: $(NAME)
 
-# libft_step is an ORDER-ONLY prerequisite (after the |). It is .PHONY, so
-# as a normal prerequisite it would always look out of date and relink the
-# binary on every `make` — which graders check for.
-$(NAME): $(OBJS) | libft_step
+$(NAME): $(OBJS) $(LIBFT_DEPS)
 	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) $(LIBS) -o $(NAME)
 
-libft_step:
 ifeq ($(HAS_LIBFT),1)
+$(LIBFT):
 	@$(MAKE) -C $(LIBFT_DIR)
-else
-	@:
 endif
 
 %.o: %.c includes/minishell.h
@@ -93,4 +91,4 @@ endif
 
 re: fclean all
 
-.PHONY: all clean fclean re libft_step
+.PHONY: all clean fclean re

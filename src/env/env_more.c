@@ -58,3 +58,35 @@ char	**env_to_array(t_shell *sh)
 {
 	return (sh->envp);
 }
+
+/*
+** True when `entry` ("KEY=VALUE" or bare "KEY") has exactly `key` as its
+** name. Comparing up to the '=' stops "PATHEXT=..." matching "PATH".
+*/
+int	env_key_match(const char *entry, const char *key)
+{
+	size_t	i;
+
+	i = 0;
+	while (entry[i] && entry[i] != '=' && key[i] && entry[i] == key[i])
+		i++;
+	if (key[i] != '\0')
+		return (0);
+	return (entry[i] == '=' || entry[i] == '\0');
+}
+
+int	env_find_index(t_shell *sh, const char *key)
+{
+	int	i;
+
+	if (!sh->envp || !key)
+		return (-1);
+	i = 0;
+	while (sh->envp[i])
+	{
+		if (env_key_match(sh->envp[i], key))
+			return (i);
+		i++;
+	}
+	return (-1);
+}

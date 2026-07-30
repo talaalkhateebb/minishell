@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   expander.c                                           :+:      :+:    :+:   */
+/*   expander.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: talaalkh <talaalkh@student.42.fr>                 +#+  +:+       +#+        */
+/*   By: talaalkh <talaalkh@student.42.fr>           +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/07/19 11:00:00 by talaalkh                      #+#    #+#             */
-/*   Updated: 2026/07/19 11:00:00 by talaalkh               ###   ########.fr       */
+/*   Created: 2026/07/19 11:00:00 by talaalkh          #+#    #+#             */
+/*   Updated: 2026/07/19 11:00:00 by talaalkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,71 +27,6 @@
 static int	is_ifs(char c)
 {
 	return (c == ' ' || c == '\t' || c == '\n');
-}
-
-/* Copies a '...' run verbatim. On entry s[*i] is the opening quote. */
-static char	*handle_single(const char *s, int *i, char *res)
-{
-	(*i)++;
-	while (s[*i] && s[*i] != '\'')
-	{
-		res = append_char(res, s[*i]);
-		(*i)++;
-	}
-	if (s[*i] == '\'')
-		(*i)++;
-	return (res);
-}
-
-/* Copies a "..." run, expanding $ inside it (no field splitting). */
-static char	*handle_double(const char *s, int *i, char *res, t_shell *sh)
-{
-	char	*val;
-
-	(*i)++;
-	while (s[*i] && s[*i] != '"')
-	{
-		if (s[*i] == '$' && s[*i + 1])
-		{
-			val = expand_dollar(s, i, sh);
-			res = append_str(res, val);
-			free(val);
-		}
-		else
-		{
-			res = append_char(res, s[*i]);
-			(*i)++;
-		}
-	}
-	if (s[*i] == '"')
-		(*i)++;
-	return (res);
-}
-
-char	*expand_word(const char *s, t_shell *sh)
-{
-	char	*res;
-	char	*val;
-	int		i;
-
-	res = ms_strdup("");
-	i = 0;
-	while (s && s[i])
-	{
-		if (s[i] == '\'')
-			res = handle_single(s, &i, res);
-		else if (s[i] == '"')
-			res = handle_double(s, &i, res, sh);
-		else if (s[i] == '$' && s[i + 1])
-		{
-			val = expand_dollar(s, &i, sh);
-			res = append_str(res, val);
-			free(val);
-		}
-		else
-			res = append_char(res, s[i++]);
-	}
-	return (res);
 }
 
 /*
@@ -126,90 +61,63 @@ static int	append_split(t_cmd *cmd, char **cur, const char *val)
 	return (0);
 }
 
+static int	expand_dollar_branch(struct s_expand *exp, const char *s, int *i)
+{
+	char	*val;
+
+	val = expand_dollar(s, i, exp->sh);
+	if (!val || append_split(exp->cmd, &exp->cur, val))
+		return (free(val), free(exp->cur), 1);
+	free(val);
+	return (0);
+}
+
+static int	expand_loop(struct s_expand *exp, const char *s, int *i)
+{
+	while (s && s[*i])
+	{
+		if (s[*i] == '\'')
+		{
+			exp->quoted = 1;
+			exp->cur = handle_single(s, i, exp->cur);
+		}
+		else if (s[*i] == '"')
+		{
+			exp->quoted = 1;
+			exp->cur = handle_double(s, i, exp->cur, exp->sh);
+		}
+		else if (s[*i] == '$' && s[*i + 1])
+		{
+			if (expand_dollar_branch(exp, s, i))
+				return (1);
+		}
+		else
+			exp->cur = append_char(exp->cur, s[(*i)++]);
+		if (!exp->cur)
+			return (1);
+	}
+	return (0);
+}
+
 /*
 ** Expand one token into zero or more argv entries. Empty unquoted results
 ** disappear; an explicitly quoted empty string (`""`) is kept.
 */
 int	expand_to_argv(t_cmd *cmd, const char *s, t_shell *sh)
 {
-	char	*cur;
-	char	*val;
-	int		i;
-	int		quoted;
+	struct s_expand	exp;
+	int				i;
 
-	cur = ms_strdup("");
-	if (!cur)
+	exp.cmd = cmd;
+	exp.sh = sh;
+	exp.quoted = 0;
+	exp.cur = ms_strdup("");
+	if (!exp.cur)
 		return (1);
-	quoted = 0;
 	i = 0;
-	while (s && s[i])
-	{
-		if (s[i] == '\'')
-		{
-			quoted = 1;
-			cur = handle_single(s, &i, cur);
-		}
-		else if (s[i] == '"')
-		{
-			quoted = 1;
-			cur = handle_double(s, &i, cur, sh);
-		}
-		else if (s[i] == '$' && s[i + 1])
-		{
-			val = expand_dollar(s, &i, sh);
-			if (!val || append_split(cmd, &cur, val))
-				return (free(val), free(cur), 1);
-			free(val);
-		}
-		else
-			cur = append_char(cur, s[i++]);
-		if (!cur)
-			return (1);
-	}
-	if (cur[0] || quoted)
-		return (argv_append(cmd, cur));
-	return (free(cur), 0);
-}
-
-/*
-** Quote removal with no expansion — used for heredoc delimiters, where
-** << "EOF" and << 'EOF' both mean the delimiter EOF with expansion off.
-*/
-char	*strip_quotes(const char *s)
-{
-	char	*res;
-	int		i;
-
-	res = ms_strdup("");
-	i = 0;
-	while (s && s[i])
-	{
-		if (s[i] == '\'')
-			res = handle_single(s, &i, res);
-		else if (s[i] == '"')
-		{
-			i++;
-			while (s[i] && s[i] != '"')
-				res = append_char(res, s[i++]);
-			if (s[i] == '"')
-				i++;
-		}
-		else
-			res = append_char(res, s[i++]);
-	}
-	return (res);
-}
-
-int	is_quoted(const char *s)
-{
-	int	i;
-
-	i = 0;
-	while (s && s[i])
-	{
-		if (s[i] == '\'' || s[i] == '"')
-			return (1);
-		i++;
-	}
-	return (0);
+	if (expand_loop(&exp, s, &i))
+		return (1);
+	if (exp.cur[0] || exp.quoted)
+		return (argv_append(cmd, exp.cur));
+	return (free(exp.cur), 0);
 }

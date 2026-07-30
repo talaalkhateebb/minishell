@@ -23,46 +23,6 @@ static void	check_signal_after_readline(t_shell *sh)
 	}
 }
 
-/*
-** bash: `$_` is the last argument of the last simple command. For `export`
-** assignment words (`FOO=bar`), bash stores only the name (`FOO`).
-*/
-static void	update_underscore(t_cmd *cmds, t_shell *sh)
-{
-	t_cmd	*last;
-	char	*arg;
-	char	*name;
-	int		i;
-	int		eq;
-
-	last = cmds;
-	while (last && last->next)
-		last = last->next;
-	if (!last || !last->argv || !last->argv[0])
-		return ;
-	i = 0;
-	while (last->argv[i + 1])
-		i++;
-	arg = last->argv[i];
-	if (ms_strcmp(last->argv[0], "export") == 0)
-	{
-		eq = 0;
-		while (arg[eq] && arg[eq] != '=')
-			eq++;
-		if (arg[eq] == '=')
-		{
-			name = ms_substr(arg, 0, eq);
-			if (name)
-			{
-				env_set(sh, "_", name);
-				free(name);
-			}
-			return ;
-		}
-	}
-	env_set(sh, "_", arg);
-}
-
 static void	run_one_line(char *line, t_shell *sh)
 {
 	t_cmd	*cmds;
@@ -75,7 +35,6 @@ static void	run_one_line(char *line, t_shell *sh)
 	if (!cmds)
 		return ;
 	sh->last_status = execute(cmds, sh);
-	update_underscore(cmds, sh);
 	free_cmds(cmds);
 }
 
@@ -110,6 +69,7 @@ int	main(int argc, char **argv, char **envp)
 	if (env_init(&sh, envp) != 0)
 		return (1);
 	sh.last_status = 0;
+	sh.pid = read_pid();
 	setup_signals_interactive();
 	disable_echoctl();
 	prompt_loop(&sh);
