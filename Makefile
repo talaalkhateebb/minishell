@@ -47,6 +47,7 @@ SRCS = \
 	src/signals/signals.c \
 	src/signals/signals_heredoc.c \
 	src/builtins_a/builtins_a.c \
+	src/builtins_a/builtins_env.c \
 	src/builtins_a/builtins_export.c \
 	src/builtins_a/builtins_export2.c \
 	src/executor/executor.c \
@@ -58,6 +59,7 @@ SRCS = \
 	src/heredoc/heredoc.c \
 	src/builtins_b/builtins_b.c \
 	src/builtins_b/builtins_cd.c \
+	src/builtins_b/builtins_cd2.c \
 	src/builtins_b/builtins_exit.c \
 	src/utils/utils_a.c \
 	src/utils/utils_b.c \

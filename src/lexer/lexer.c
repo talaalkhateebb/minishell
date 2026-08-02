@@ -48,7 +48,9 @@ static int	lex_operator(const char *line, int *i, t_token **head)
 	int				len;
 
 	len = 1;
-	if (line[*i] == '|')
+	if (line[*i] == '|' && line[*i + 1] == '|')
+		type = T_OR;
+	else if (line[*i] == '|')
 		type = T_PIPE;
 	else if (line[*i] == '<' && line[*i + 1] == '<')
 		type = T_HEREDOC;
@@ -58,7 +60,7 @@ static int	lex_operator(const char *line, int *i, t_token **head)
 		type = T_APPEND;
 	else
 		type = T_REDIR_OUT;
-	if (type == T_HEREDOC || type == T_APPEND)
+	if (type == T_HEREDOC || type == T_APPEND || type == T_OR)
 		len = 2;
 	tok_add_back(head, tok_new(ms_substr(line, *i, len), type));
 	*i += len;

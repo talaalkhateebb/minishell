@@ -42,8 +42,14 @@ FAILED_NAMES=()
 # ("bash: `echo hi >'") and the "unexpected end of file" that follows a
 # construct it would have asked PS2 to complete. Neither appears in an
 # interactive bash, so neither is a real difference from minishell.
+
+# The bash name is matched loosely because bash announces itself as whatever
+# argv[0] was: plain "bash: " when it is on PATH, but the full
+# "/opt/homebrew/bin/bash: line 1: " when BASH_BIN points at a build by path.
+# Anchoring on the literal "bash: " silently failed 27 cases whose message
+# bodies were in fact identical.
 norm() { sed -e 's/^minishell: /SH: /' \
-	-e 's/^bash: line [0-9]*: /SH: /' -e 's/^bash: /SH: /' \
+	-e 's|^[^ ]*bash: line [0-9]*: |SH: |' -e 's|^[^ ]*bash: |SH: |' \
 	-e "/^SH: \`.*'$/d" -e '/^SH: syntax error: unexpected end of file$/d'; }
 
 # run_expect <name> <script> <expected>
@@ -193,6 +199,22 @@ run "cd empty string"        $'cd ""\necho $?'
 run "cd dash unset OLDPWD"   $'cd -\necho $?'
 run "pwd ignores fake PWD"   $'export PWD=/nonsense\npwd'
 run "cd home"                $'cd\npwd'
+
+# Standing in a directory that was deleted underneath us. bash warns once and
+# keeps going (status 0), and because it can no longer canonicalize anything
+# it records $PWD as the raw "a/b/..". The second cd is silent and back to
+# normal logical resolution. Not diffable against bash: bash's warning comes
+# out as "cd: ...", with no shell-name prefix for norm() to rewrite.
+CDTMP=$(mktemp -d)
+run_expect "cd deleted cwd" \
+	$'mkdir -p '"$CDTMP"$'/a/b\ncd '"$CDTMP"$'/a/b\nrm -r ../../a\ncd ..\necho $?\npwd\ncd ..\necho $?\npwd' \
+	"SH: error retrieving current directory: getcwd: cannot access parent directories: No such file or directory
+0
+$CDTMP/a/b/..
+0
+$CDTMP
+EXIT=0"
+rm -rf "$CDTMP"
 run "export lists PATH"      'export | grep -c "declare -x PATH="'
 run "export sets"            $'export FOO=bar\necho $FOO'
 run "export invalid name"    $'export 1BAD=x\necho $?'
@@ -206,6 +228,18 @@ run "unset empty name"       $'unset ""\necho $?'
 run "unset empty and name"   $'unset "" test\necho $?'
 run "unset no args"          $'unset\necho $?'
 run "env lists PATH"         'env | grep -c "^PATH="'
+run_expect "env missing command" $'env test/\necho $?' \
+	$'env: \'test/\': No such file or directory\n127\nEXIT=0'
+run_expect "env unknown name"    $'env nosuchcmd\necho $?' \
+	$'env: \'nosuchcmd\': No such file or directory\n127\nEXIT=0'
+run_expect "env directory"       $'env /tmp\necho $?' \
+	$'env: \'/tmp\': Permission denied\n126\nEXIT=0'
+run_expect "env not a directory" $'env Makefile/\necho $?' \
+	$'env: \'Makefile/\': Not a directory\n126\nEXIT=0'
+run_expect "env empty command"   $'env ""\necho $?' \
+	$'env: \'\': No such file or directory\n127\nEXIT=0'
+run "env runs command"       $'env echo hi\necho $?'
+run "env passes exports"     $'export ZFOO=bar\nenv env | grep -c "^ZFOO=bar$"'
 run "exit code"              'exit 42'
 run "exit modulo 256"        'exit 300'
 run "exit negative"          'exit -1'
@@ -263,6 +297,17 @@ Checked with run_expect instead of against the local bash:
                 returns, and what the evaluation sheet asks for. The bash
                 3.2 shipped with macOS prints its own lowercase string
                 instead, so diffing this one case against it would fail.
+
+  env ARG       "env: 'ARG': ..." — env is an external program, so its
+                message comes from whichever env the system ships. The GNU
+                coreutils env on Ubuntu quotes the operand, like every
+                coreutils tool does ("ls: cannot access 'foo'"); the BSD
+                env on macOS does not. minishell follows Ubuntu.
+
+  deleted cwd   bash prints its getcwd warning as "cd: ..." with no shell
+                name in front of it, so norm() has nothing to rewrite and
+                the line can never match minishell's. The message, the
+                status and the resulting $PWD are all bash's, verbatim.
 
 NOTIMPL
 

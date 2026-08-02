@@ -69,12 +69,18 @@ int	builtin_echo(char **argv)
 /*
 ** `env` prints only entries that actually carry a value — a name that was
 ** exported without one (`export FOO`) is listed by `export` but not here.
+**
+** With arguments, `env` is not a printer at all: the first word is a command
+** to run with this environment, so `env test/` has to fail the way the real
+** env does instead of silently dumping the environment.
 */
-int	builtin_env(t_shell *sh)
+int	builtin_env(char **argv, t_shell *sh)
 {
 	int		i;
 	char	*eq;
 
+	if (argv[1])
+		return (env_run_command(argv + 1, sh));
 	if (!sh->envp)
 		return (0);
 	i = 0;

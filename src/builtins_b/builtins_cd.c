@@ -73,6 +73,13 @@ static char	*canonicalize(const char *path)
 ** The shell's logical cwd. $PWD is only trusted when it still names the
 ** directory we are actually in, so a hand-edited `export PWD=...` cannot
 ** make pwd lie; otherwise getcwd() decides.
+**
+** When the directory we are standing in has been deleted, getcwd() fails
+** and there is nothing left to verify $PWD against — but bash still
+** resolves `cd ..` and `pwd` against it, so a stale $PWD is better than
+** none. Dropping it here is what made `cd ..` resolve "" + "/.." and land
+** in "/". This last fallback cannot make pwd lie: it is only reached once
+** getcwd() has already refused to answer.
 */
 char	*cd_current_pwd(t_shell *sh)
 {
@@ -87,6 +94,8 @@ char	*cd_current_pwd(t_shell *sh)
 		return (ms_strdup(pwd));
 	if (getcwd(buf, sizeof(buf)))
 		return (ms_strdup(buf));
+	if (pwd && pwd[0] == '/')
+		return (ms_strdup(pwd));
 	return (ms_strdup(""));
 }
 

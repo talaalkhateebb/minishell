@@ -31,6 +31,7 @@ typedef enum e_token_type
 {
 	T_WORD,
 	T_PIPE,
+	T_OR,
 	T_REDIR_IN,
 	T_REDIR_OUT,
 	T_APPEND,
@@ -67,6 +68,7 @@ typedef struct s_shell
 	int		should_exit;
 	char	*syntax_token;
 	int		pid;
+	int		cwd_lost;
 }	t_shell;
 
 extern volatile sig_atomic_t	g_signal;
@@ -154,7 +156,8 @@ int		report_signal(int status);
 
 /* === Built-ins A (env-touching) === */
 int		builtin_echo(char **argv);
-int		builtin_env(t_shell *sh);
+int		builtin_env(char **argv, t_shell *sh);
+int		env_run_command(char **av, t_shell *sh);
 int		builtin_export(char **argv, t_shell *sh);
 int		builtin_unset(char **argv, t_shell *sh);
 void	print_exports(t_shell *sh);
@@ -165,6 +168,8 @@ int		builtin_pwd(t_shell *sh);
 char	*cd_current_pwd(t_shell *sh);
 char	*cd_logical_path(t_shell *sh, const char *target);
 int		cd_move(const char *target, const char *logical);
+int		cd_report_lost_cwd(t_shell *sh);
+char	*cd_target_path(t_shell *sh, const char *target, int lost);
 int		builtin_exit(char **argv, t_shell *sh);
 int		builtin_dot(char **argv);
 

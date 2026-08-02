@@ -84,12 +84,9 @@ int	builtin_cd(char **argv, t_shell *sh)
 	if (!target)
 		return (1);
 	old = cd_current_pwd(sh);
-	new = cd_logical_path(sh, target);
+	new = cd_target_path(sh, target, cd_report_lost_cwd(sh));
 	if (!old || !new)
 		return (free(old), free(new), 1);
-	if (!old[0])
-		put_err("cd", "error retrieving current directory: getcwd: "
-			"cannot access parent directories: No such file or directory");
 	if (cd_move(target, new) == -1)
 		return (free(old), free(new), cd_error(target), 1);
 	env_set(sh, "OLDPWD", old);

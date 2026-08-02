@@ -105,6 +105,8 @@ static int	parse_loop(t_cmd *cur, t_token *toks, t_shell *sh)
 			fail = handle_redir(cur, &toks, sh);
 			filled = 1;
 		}
+		else
+			fail = (syntax_error(toks->value, sh), 1);
 	}
 	return (fail);
 }

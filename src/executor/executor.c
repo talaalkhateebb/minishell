@@ -48,7 +48,7 @@ int	run_builtin(t_cmd *cmd, t_shell *sh)
 	if (ms_strcmp(name, "unset") == 0)
 		return (builtin_unset(cmd->argv, sh));
 	if (ms_strcmp(name, "env") == 0)
-		return (builtin_env(sh));
+		return (builtin_env(cmd->argv, sh));
 	if (ms_strcmp(name, ".") == 0)
 		return (builtin_dot(cmd->argv));
 	return (builtin_exit(cmd->argv, sh));

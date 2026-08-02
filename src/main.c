@@ -69,6 +69,7 @@ int	main(int argc, char **argv, char **envp)
 	if (env_init(&sh, envp) != 0)
 		return (1);
 	sh.last_status = 0;
+	sh.cwd_lost = 0;
 	sh.pid = read_pid();
 	setup_signals_interactive();
 	enable_echoctl();
