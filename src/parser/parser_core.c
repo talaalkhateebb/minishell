@@ -54,13 +54,16 @@ static int	handle_redir(t_cmd *cur, t_token **toks, t_shell *sh)
 ** `filled` says whether the command before the pipe had any word or
 ** redirection *token* — not whether argv ended up non-empty, since a word
 ** may legitimately have vanished: `$EMPTY | cat` is not a syntax error.
+**
+** A trailing pipe reports `newline': bash would read a continuation line
+** there, but we take the whole command at once, so the line ends instead.
 */
 static int	handle_pipe(t_cmd **cur, t_token **toks, t_shell *sh, int filled)
 {
 	if (!filled)
 		return (syntax_error("|", sh), 1);
 	if (!(*toks)->next)
-		return (syntax_error("|", sh), 1);
+		return (syntax_error("newline", sh), 1);
 	(*cur)->next = cmd_new();
 	if (!(*cur)->next)
 		return (1);

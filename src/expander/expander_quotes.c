@@ -57,8 +57,7 @@ char	*expand_word(const char *s, t_shell *sh)
 	char	*val;
 	int		i;
 
-	res = ms_strdup("");
-	i = 0;
+	res = tilde_seed(s, &i, sh);
 	while (s && s[i] && res)
 	{
 		if (s[i] == '\'')

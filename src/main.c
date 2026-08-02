@@ -44,7 +44,7 @@ static void	prompt_loop(t_shell *sh)
 
 	while (1)
 	{
-		disable_echoctl();
+		enable_echoctl();
 		line = ms_readline("minishell$ ");
 		check_signal_after_readline(sh);
 		if (!line)
@@ -71,7 +71,7 @@ int	main(int argc, char **argv, char **envp)
 	sh.last_status = 0;
 	sh.pid = read_pid();
 	setup_signals_interactive();
-	disable_echoctl();
+	enable_echoctl();
 	prompt_loop(&sh);
 	rl_clear_history();
 	env_free(&sh);

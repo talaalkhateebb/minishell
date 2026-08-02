@@ -111,10 +111,9 @@ int	expand_to_argv(t_cmd *cmd, const char *s, t_shell *sh)
 	exp.cmd = cmd;
 	exp.sh = sh;
 	exp.quoted = 0;
-	exp.cur = ms_strdup("");
+	exp.cur = tilde_seed(s, &i, sh);
 	if (!exp.cur)
 		return (1);
-	i = 0;
 	if (expand_loop(&exp, s, &i))
 		return (1);
 	if (exp.cur[0] || exp.quoted)

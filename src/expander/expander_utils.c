@@ -49,6 +49,26 @@ char	*append_char(char *res, char c)
 }
 
 /*
+** Starts the result string for a word, expanding a leading `~` to $HOME
+** and setting *i past it. Only a bare `~` or a `~/...` prefix expands:
+** `~user`, `a~b` and a quoted `"~"` stay literal, and so does `~` when
+** HOME is unset — bash does the same in every one of those cases.
+*/
+char	*tilde_seed(const char *s, int *i, t_shell *sh)
+{
+	char	*home;
+
+	*i = 0;
+	if (!s || s[0] != '~' || (s[1] && s[1] != '/'))
+		return (ms_strdup(""));
+	home = env_get(sh, "HOME");
+	if (!home)
+		return (ms_strdup(""));
+	*i = 1;
+	return (ms_strdup(home));
+}
+
+/*
 ** Heredoc body line: $ expands, but quotes are NOT special here — a
 ** literal " inside a heredoc stays a literal ".
 */

@@ -33,12 +33,15 @@ int	builtin_dot(char **argv)
 }
 
 /* `cd` with no argument uses HOME; `cd -` returns to OLDPWD and echoes
-** the destination, both of which come from the env module. */
+** the destination, both of which come from the env module. `--` ends the
+** options, so it means HOME too, and a bare `~` only reaches us unexpanded
+** when HOME is unset — the same lookup reports that. */
 static char	*resolve_cd_target(char **argv, t_shell *sh)
 {
 	char	*target;
 
-	if (!argv[1] || ms_strcmp(argv[1], "~") == 0)
+	if (!argv[1] || ms_strcmp(argv[1], "~") == 0
+		|| ms_strcmp(argv[1], "--") == 0)
 	{
 		target = env_get(sh, "HOME");
 		if (!target)
@@ -84,6 +87,9 @@ int	builtin_cd(char **argv, t_shell *sh)
 	new = cd_logical_path(sh, target);
 	if (!old || !new)
 		return (free(old), free(new), 1);
+	if (!old[0])
+		put_err("cd", "error retrieving current directory: getcwd: "
+			"cannot access parent directories: No such file or directory");
 	if (cd_move(target, new) == -1)
 		return (free(old), free(new), cd_error(target), 1);
 	env_set(sh, "OLDPWD", old);

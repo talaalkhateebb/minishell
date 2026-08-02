@@ -46,6 +46,26 @@ norm() { sed -e 's/^minishell: /SH: /' \
 	-e 's/^bash: line [0-9]*: /SH: /' -e 's/^bash: /SH: /' \
 	-e "/^SH: \`.*'$/d" -e '/^SH: syntax error: unexpected end of file$/d'; }
 
+# run_expect <name> <script> <expected>
+# For the handful of cases where the evaluation sheet asks for something
+# bash does not do. Those cannot be diffed against bash, so the expected
+# output is spelled out here instead — see the notes at the bottom.
+run_expect() {
+	local name="$1" script="$2" want="$3" got
+	got=$( { printf '%s\n' "$script" | $MS; echo "EXIT=$?"; } 2>&1 | norm )
+	if [ "$got" = "$want" ]; then
+		PASS=$((PASS + 1))
+		return
+	fi
+	FAIL=$((FAIL + 1))
+	FAILED_NAMES+=("$name")
+	echo "FAIL: $name"
+	if [ "$VERBOSE" = 1 ]; then
+		diff <(printf '%s\n' "$want") <(printf '%s\n' "$got") \
+			--label expected --label minishell -u | sed 's/^/    /'
+	fi
+}
+
 # run <name> <script>
 run() {
 	local name="$1" script="$2" bout mout
@@ -88,7 +108,8 @@ run "echo many args"         'echo 1 2 3 4 5 6 7 8 9 10'
 run "status ok"              $'ls > /dev/null\necho $?'
 run "status false"           $'/usr/bin/false\necho $?'
 run "status not found"       $'nosuchcmd_xyz\necho $?'
-run "status is a directory"  $'/tmp\necho $?'
+run_expect "status is a directory" $'/tmp\necho $?' \
+	$'SH: /tmp: Is a directory\n126\nEXIT=0'
 run "status not executable"  $'/etc/passwd\necho $?'
 run "status relative"        $'./nosuchfile_xyz\necho $?'
 
@@ -181,6 +202,8 @@ run "export quoted value"    $'export "A=b c"\necho [$A]'
 run "export OLDPWD at start" 'export | grep -c "^declare -x OLDPWD$"'
 run "unset"                  $'export FOO=bar\nunset FOO\necho [$FOO]'
 run "unset invalid name"     $'unset 1BAD\necho $?'
+run "unset empty name"       $'unset ""\necho $?'
+run "unset empty and name"   $'unset "" test\necho $?'
 run "unset no args"          $'unset\necho $?'
 run "env lists PATH"         'env | grep -c "^PATH="'
 run "exit code"              'exit 42'
@@ -233,6 +256,13 @@ are not covered above:
   \             backslash escaping
   <<<           here-strings
   $(...)  ``    command substitution
+
+Checked with run_expect instead of against the local bash:
+
+  /tmp          "Is a directory" — the capital I is what strerror(EISDIR)
+                returns, and what the evaluation sheet asks for. The bash
+                3.2 shipped with macOS prints its own lowercase string
+                instead, so diffing this one case against it would fail.
 
 NOTIMPL
 

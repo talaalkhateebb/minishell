@@ -28,9 +28,12 @@ int	is_interactive(void)
 }
 
 /*
-** bash turns off ECHOCTL so Ctrl-C at the prompt does not print `^C`.
+** ECHOCTL is what makes the terminal echo `^C` / `^\` when those keys are
+** pressed — the shell never prints them itself. readline restores whatever
+** attributes were set when it prepped the terminal, so setting the flag
+** before each prompt keeps it on for the foreground child too.
 */
-void	disable_echoctl(void)
+void	enable_echoctl(void)
 {
 	struct termios	term;
 
@@ -38,7 +41,7 @@ void	disable_echoctl(void)
 		return ;
 	if (tcgetattr(STDIN_FILENO, &term) == -1)
 		return ;
-	term.c_lflag &= ~ECHOCTL;
+	term.c_lflag |= ECHOCTL;
 	tcsetattr(STDIN_FILENO, TCSANOW, &term);
 }
 
