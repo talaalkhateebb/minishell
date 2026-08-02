@@ -79,7 +79,7 @@ int	builtin_export(char **argv, t_shell *sh)
 	return (status);
 }
 
-/* `unset FOO=bar` is an error: unset takes bare names, never assignments. */
+/* `unset FOO=bar` names nothing: unset takes bare names, never assignments. */
 static int	has_equals(const char *s)
 {
 	while (*s)
@@ -88,25 +88,21 @@ static int	has_equals(const char *s)
 	return (0);
 }
 
+/*
+** Unlike export, bash's unset says nothing about a name it cannot use —
+** `unset 1BAD`, `unset ""` and `unset a=b` all print no error and leave
+** the status at 0. Anything unusable is simply skipped.
+*/
 int	builtin_unset(char **argv, t_shell *sh)
 {
 	int	i;
-	int	status;
 
-	status = 0;
 	i = 1;
 	while (argv[i])
 	{
-		if (!is_valid_identifier(argv[i]) || has_equals(argv[i]))
-		{
-			put_str(2, "minishell: unset: `");
-			put_str(2, argv[i]);
-			put_str(2, "': not a valid identifier\n");
-			status = 1;
-		}
-		else
+		if (is_valid_identifier(argv[i]) && !has_equals(argv[i]))
 			env_unset(sh, argv[i]);
 		i++;
 	}
-	return (status);
+	return (0);
 }

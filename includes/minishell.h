@@ -150,7 +150,7 @@ void	setup_signals_interactive(void);
 void	setup_signals_exec(void);
 void	setup_signals_child(void);
 void	setup_signals_heredoc(void);
-int		report_signal(int sig);
+int		report_signal(int status);
 
 /* === Built-ins A (env-touching) === */
 int		builtin_echo(char **argv);

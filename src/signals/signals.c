@@ -26,19 +26,39 @@
 ** The single global g_signal only ever stores the signal number.
 */
 
+/*
+** "^C" is written by hand. readline turns ECHO off while it owns the
+** terminal, so the tty cannot echo the intr character itself, and with
+** rl_catch_signals off readline no longer echoes it either — yet bash
+** shows it. Outside readline (a child in the foreground) the terminal is
+** back in canonical mode and ECHOCTL echoes "^C" on its own, which is why
+** report_signal() below only adds the newline.
+*/
 static void	sigint_interactive(int sig)
 {
 	g_signal = sig;
-	write(1, "\n", 1);
-	rl_on_new_line();
+	write(1, "^C\n", 3);
 	rl_replace_line("", 0);
+	rl_on_new_line();
 	rl_redisplay();
 }
 
+/*
+** rl_catch_signals must be 0. Left at its default of 1, readline installs
+** its OWN SIGINT handler: on Ctrl-C it frees the line, un-preps the
+** terminal, re-raises the signal to the handler below — which then
+** redisplays onto a terminal readline has already reset — and finally
+** re-preps and redraws the prompt a second time. On Linux that leaves a
+** duplicated prompt and readline's column bookkeeping out of sync, so the
+** next characters typed land in the wrong place. With it off, this handler
+** is the only one that runs, and SA_RESTART keeps readline in its read
+** loop so the redrawn prompt is the live one.
+*/
 void	setup_signals_interactive(void)
 {
 	struct sigaction	sa;
 
+	rl_catch_signals = 0;
 	sa.sa_handler = sigint_interactive;
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART;
@@ -59,14 +79,25 @@ void	setup_signals_child(void)
 }
 
 /*
-** Bash prints the newline itself when a foreground child dies on Ctrl-C,
-** and "Quit: 3" on Ctrl-\. Returns the 128 + signo exit status.
+** Bash prints the newline itself when a foreground child dies on Ctrl-C.
+** On Ctrl-\ it prints "Quit", followed by " (core dumped)" only when the
+** kernel actually wrote a core — which is what `ulimit -c` decides. Takes
+** the raw wait status, not the bare signo, so that test can be made.
+** Returns the 128 + signo exit status.
 */
-int	report_signal(int sig)
+int	report_signal(int status)
 {
+	int	sig;
+
+	sig = WTERMSIG(status);
 	if (sig == SIGINT)
 		put_str(1, "\n");
 	else if (sig == SIGQUIT)
-		put_str(1, "Quit: 3\n");
+	{
+		put_str(1, "Quit");
+		if (WCOREDUMP(status))
+			put_str(1, " (core dumped)");
+		put_str(1, "\n");
+	}
 	return (128 + sig);
 }

@@ -87,14 +87,14 @@ static char	*search_in_path(char *cmd, t_shell *sh)
 
 /*
 ** bash reports a bare name as "No such file or directory" rather than
-** "command not found" when there is no PATH at all to search.
+** "command not found" when there is no PATH at all to search — but only
+** when PATH is genuinely gone. `export PATH=""` leaves an empty search
+** list, not a missing one, and there bash is back to "command not found",
+** so an empty value must NOT count as unset here.
 */
 int	path_is_unset(t_shell *sh)
 {
-	char	*path;
-
-	path = env_get(sh, "PATH");
-	return (!path || !*path);
+	return (env_get(sh, "PATH") == NULL);
 }
 
 char	*find_executable(char *cmd, t_shell *sh)

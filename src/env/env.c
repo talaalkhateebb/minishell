@@ -20,9 +20,11 @@
 ** '=' is an exported-but-unset name (`export FOO`): `export` lists it,
 ** `env` does not, and env_get() reports it as absent.
 **
-** OLDPWD is one of those on startup: bash drops whatever value the parent
-** process had there and only fills it in once this shell has cd'd, so a
-** first `cd -` reports "OLDPWD not set" the same way bash's does.
+** OLDPWD is one of those on startup, but only when the parent passed no
+** value for it: bash inherits a real OLDPWD untouched (so `cd -` works
+** immediately), and otherwise still carries the bare name marked for
+** export, which is why `export` lists "declare -x OLDPWD" before any cd
+** and `cd -` then reports "OLDPWD not set".
 */
 
 static long	get_shlvl_value(const char *cur)
@@ -109,8 +111,8 @@ int	env_init(t_shell *sh, char **envp)
 		return (1);
 	if (copy_envp(sh, envp))
 		return (1);
-	if (env_find_index(sh, "OLDPWD") != -1)
-		env_set(sh, "OLDPWD", NULL);
+	if (env_find_index(sh, "OLDPWD") == -1 && env_set(sh, "OLDPWD", NULL))
+		return (1);
 	return (update_shlvl(sh), 0);
 }
 

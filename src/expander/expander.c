@@ -29,11 +29,29 @@ static int	is_ifs(char c)
 	return (c == ' ' || c == '\t' || c == '\n');
 }
 
+/* Hands the finished field to argv and opens a fresh, unquoted one. */
+static int	push_field(struct s_expand *exp)
+{
+	if (argv_append(exp->cmd, exp->cur))
+		return (1);
+	exp->quoted = 0;
+	exp->cur = ms_strdup("");
+	if (!exp->cur)
+		return (1);
+	return (0);
+}
+
 /*
 ** Append an unquoted expansion into the current field, splitting on IFS.
-** Completed fields are pushed to argv; trailing partial text stays in *cur.
+**
+** exp->quoted tracks the field being built, not the whole token — that is
+** the whole trick. A boundary flushes the field when it holds text OR when
+** a quoted segment opened it, so `""$var` keeps its empty first field the
+** way bash does, and clearing the flag stops those same quotes from also
+** marking the NEXT field. Trailing IFS then leaves an empty unquoted field,
+** which expand_to_argv() drops — no phantom last argument.
 */
-static int	append_split(t_cmd *cmd, char **cur, const char *val)
+static int	append_split(struct s_expand *exp, const char *val)
 {
 	int	i;
 
@@ -42,20 +60,14 @@ static int	append_split(t_cmd *cmd, char **cur, const char *val)
 	{
 		if (is_ifs(val[i]))
 		{
-			if ((*cur)[0])
-			{
-				if (argv_append(cmd, *cur))
-					return (1);
-				*cur = ms_strdup("");
-				if (!*cur)
-					return (1);
-			}
+			if ((exp->cur[0] || exp->quoted) && push_field(exp))
+				return (1);
 			while (val[i] && is_ifs(val[i]))
 				i++;
 		}
 		else
-			*cur = append_char(*cur, val[i++]);
-		if (!*cur)
+			exp->cur = append_char(exp->cur, val[i++]);
+		if (!exp->cur)
 			return (1);
 	}
 	return (0);
@@ -66,7 +78,7 @@ static int	expand_dollar_branch(struct s_expand *exp, const char *s, int *i)
 	char	*val;
 
 	val = expand_dollar(s, i, exp->sh);
-	if (!val || append_split(exp->cmd, &exp->cur, val))
+	if (!val || append_split(exp, val))
 		return (free(val), free(exp->cur), 1);
 	free(val);
 	return (0);

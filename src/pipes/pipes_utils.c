@@ -83,7 +83,7 @@ int	wait_children(pid_t *pids, int n)
 			if (WIFEXITED(status))
 				last = WEXITSTATUS(status);
 			else if (WIFSIGNALED(status))
-				last = report_signal(WTERMSIG(status));
+				last = report_signal(status);
 		}
 		i++;
 	}

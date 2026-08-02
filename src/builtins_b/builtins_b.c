@@ -79,7 +79,7 @@ int	builtin_cd(char **argv, t_shell *sh)
 	if (argv[1] && argv[2])
 		return (put_err("cd", "too many arguments"), 1);
 	if (argv[1] && !argv[1][0])
-		return (0);
+		return (put_err("cd", "null directory"), 1);
 	target = resolve_cd_target(argv, sh);
 	if (!target)
 		return (1);
