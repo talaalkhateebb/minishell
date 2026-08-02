@@ -31,7 +31,10 @@ t_token	*tok_new(char *value, t_token_type type)
 		return (NULL);
 	tok = malloc(sizeof(t_token));
 	if (!tok)
-		return (free(value), NULL);
+	{
+		free(value);
+		return (NULL);
+	}
 	tok->value = value;
 	tok->type = type;
 	tok->next = NULL;

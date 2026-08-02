@@ -36,6 +36,20 @@ void	put_err(const char *prefix, const char *msg)
 	put_str(2, "\n");
 }
 
+/*
+** Reporting a failure and handing back the status that goes with it is the
+** single most common thing this shell does, and it used to be written as
+** `return (put_err(cmd, "command not found"), 127)` — one return giving
+** back two things. Naming the pair keeps every one of those branches a
+** single value, and keeps it on one line: several of the functions doing
+** it sit at the Norm's 25-line limit and have no room to spell it out.
+*/
+int	err_ret(const char *prefix, const char *msg, int code)
+{
+	put_err(prefix, msg);
+	return (code);
+}
+
 /* A bare name: a letter or '_', then letters, digits and '_' only. */
 int	is_identifier(const char *s)
 {

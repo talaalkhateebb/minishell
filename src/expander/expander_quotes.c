@@ -27,18 +27,14 @@ char	*handle_single(const char *s, int *i, char *res)
 
 char	*handle_double(const char *s, int *i, char *res, t_shell *sh)
 {
-	char	*val;
-
 	(*i)++;
 	while (s[*i] && s[*i] != '"' && res)
 	{
 		if (s[*i] == '$' && s[*i + 1])
 		{
-			val = expand_dollar(s, i, sh);
-			if (!val)
-				return (free(res), NULL);
-			res = append_str(res, val);
-			free(val);
+			res = append_dollar(res, s, i, sh);
+			if (!res)
+				return (NULL);
 		}
 		else
 		{
@@ -54,7 +50,6 @@ char	*handle_double(const char *s, int *i, char *res, t_shell *sh)
 char	*expand_word(const char *s, t_shell *sh)
 {
 	char	*res;
-	char	*val;
 	int		i;
 
 	res = tilde_seed(s, &i, sh);
@@ -66,11 +61,9 @@ char	*expand_word(const char *s, t_shell *sh)
 			res = handle_double(s, &i, res, sh);
 		else if (s[i] == '$' && s[i + 1])
 		{
-			val = expand_dollar(s, &i, sh);
-			if (!val)
-				return (free(res), NULL);
-			res = append_str(res, val);
-			free(val);
+			res = append_dollar(res, s, &i, sh);
+			if (!res)
+				return (NULL);
 		}
 		else
 			res = append_char(res, s[i++]);

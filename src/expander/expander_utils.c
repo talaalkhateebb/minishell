@@ -25,18 +25,42 @@ char	*append_str(char *res, const char *add)
 		return (res);
 	out = malloc(ms_strlen(res) + ms_strlen(add) + 1);
 	if (!out)
-		return (free(res), NULL);
-	i = 0;
-	while (res[i])
 	{
-		out[i] = res[i];
-		i++;
+		free(res);
+		return (NULL);
 	}
+	i = 0;
+	j = 0;
+	while (res[j])
+		out[i++] = res[j++];
 	j = 0;
 	while (add[j])
 		out[i++] = add[j++];
 	out[i] = '\0';
-	return (free(res), out);
+	free(res);
+	return (out);
+}
+
+/*
+** Expands the $-expression at s[*i] and appends it to `res`, owning both
+** frees. Returns NULL — with `res` already released — when the expansion
+** failed, which is how "bad substitution" and an unterminated `${` reach
+** the caller. Every place that walks a string looking for `$` needs this
+** exact dance, so it lives here rather than three times over.
+*/
+char	*append_dollar(char *res, const char *s, int *i, t_shell *sh)
+{
+	char	*val;
+
+	val = expand_dollar(s, i, sh);
+	if (!val)
+	{
+		free(res);
+		return (NULL);
+	}
+	res = append_str(res, val);
+	free(val);
+	return (res);
 }
 
 char	*append_char(char *res, char c)
@@ -75,7 +99,6 @@ char	*tilde_seed(const char *s, int *i, t_shell *sh)
 char	*expand_heredoc_line(const char *s, t_shell *sh)
 {
 	char	*res;
-	char	*val;
 	int		i;
 
 	res = ms_strdup("");
@@ -84,11 +107,9 @@ char	*expand_heredoc_line(const char *s, t_shell *sh)
 	{
 		if (s[i] == '$' && s[i + 1])
 		{
-			val = expand_dollar(s, &i, sh);
-			if (!val)
-				return (free(res), NULL);
-			res = append_str(res, val);
-			free(val);
+			res = append_dollar(res, s, &i, sh);
+			if (!res)
+				return (NULL);
 		}
 		else
 			res = append_char(res, s[i++]);

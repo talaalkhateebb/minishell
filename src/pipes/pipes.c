@@ -23,13 +23,27 @@
 ** executor.c runs those directly in the parent.
 */
 
-static void	child_wire_pipes(int (*pipes)[2], int n, int idx)
+/*
+** Runs in the child only, which is why it can free what it frees.
+**
+** Once the fds are dup2'd and every pipe end is closed, the pipe table and
+** the pid array have no reader left here: a child never waits for anyone.
+** They are the fork's private copies of the parent's two mallocs, so a
+** child that exits without exec'ing — a built-in in a pipeline, a failed
+** redirection, "command not found" — carries them all the way to exit(),
+** and a leak checker that follows the forks (--trace-children=yes) reports
+** 12 bytes still reachable in every such child. The parent's own copies
+** are freed in run_pipeline() and are untouched by this.
+*/
+static void	child_wire_pipes(int (*pipes)[2], pid_t *pids, int n, int idx)
 {
 	if (idx > 0)
 		dup2(pipes[idx - 1][0], STDIN_FILENO);
 	if (idx < n - 1)
 		dup2(pipes[idx][1], STDOUT_FILENO);
 	close_pipes(pipes, n - 1);
+	free(pipes);
+	free(pids);
 }
 
 /*
@@ -82,6 +96,12 @@ static int	open_all_pipes(int (*pipes)[2], int n)
 	return (0);
 }
 
+/*
+** child_wire_pipes() frees pipes and pids, so only the child branch may
+** touch them afterwards — and it does not: run_child() never returns, it
+** always ends in execve() or child_exit(). The parent keeps looping on its
+** own copies, which the fork left alone.
+*/
 static int	fork_all(t_cmd *cmds, t_shell *sh, int (*pipes)[2], pid_t *pids)
 {
 	int		i;
@@ -101,7 +121,7 @@ static int	fork_all(t_cmd *cmds, t_shell *sh, int (*pipes)[2], pid_t *pids)
 			return (-1);
 		if (pids[i] == 0)
 		{
-			child_wire_pipes(pipes, n, i);
+			child_wire_pipes(pipes, pids, n, i);
 			run_child(cur, sh);
 		}
 		cur = cur->next;
@@ -110,6 +130,12 @@ static int	fork_all(t_cmd *cmds, t_shell *sh, int (*pipes)[2], pid_t *pids)
 	return (0);
 }
 
+/*
+** N commands need N-1 pipes — but a lone command needs none, and asking
+** malloc() for 0 bytes may hand back NULL, which the check below would
+** read as failure. So `slots` never drops under one; only the first n-1
+** of them are ever opened.
+*/
 int	run_pipeline(t_cmd *cmds, t_shell *sh)
 {
 	int		(*pipes)[2];
@@ -125,7 +151,7 @@ int	run_pipeline(t_cmd *cmds, t_shell *sh)
 	pipes = malloc(sizeof(int [2]) * slots);
 	pids = malloc(sizeof(pid_t) * n);
 	if (!pipes || !pids || open_all_pipes(pipes, n) == -1)
-		return (free(pipes), free(pids), 1);
+		return (pipeline_fail(pipes, pids));
 	setup_signals_exec();
 	if (fork_all(cmds, sh, pipes, pids) == -1)
 		put_err(NULL, "fork failed");

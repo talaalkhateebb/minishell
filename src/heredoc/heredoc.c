@@ -63,7 +63,10 @@ static int	read_heredoc_body(int fd, t_redir *redir, t_shell *sh)
 			return (2);
 		}
 		if (ms_strcmp(line, redir->target) == 0)
-			return (free(line), 0);
+		{
+			free(line);
+			return (0);
+		}
 		write_heredoc_line(fd, line, redir, sh);
 		free(line);
 	}
@@ -79,11 +82,9 @@ static int	fill_heredoc(t_redir *redir, t_shell *sh)
 	int	saved_stdin;
 	int	result;
 
-	if (pipe(fds) == -1)
-		return (-1);
-	saved_stdin = dup(STDIN_FILENO);
+	saved_stdin = heredoc_open(fds);
 	if (saved_stdin == -1)
-		return (close(fds[0]), close(fds[1]), -1);
+		return (-1);
 	g_signal = 0;
 	setup_signals_heredoc();
 	result = read_heredoc_body(fds[1], redir, sh);
@@ -92,7 +93,10 @@ static int	fill_heredoc(t_redir *redir, t_shell *sh)
 	close(saved_stdin);
 	close(fds[1]);
 	if (result == 1)
-		return (close(fds[0]), -1);
+	{
+		close(fds[0]);
+		return (-1);
+	}
 	redir->heredoc_fd = fds[0];
 	return (0);
 }

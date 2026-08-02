@@ -65,7 +65,10 @@ static char	*canonicalize(const char *path)
 			res = add_component(res, path + start, i - start);
 	}
 	if (res && !res[0])
-		return (free(res), ms_strdup("/"));
+	{
+		free(res);
+		return (ms_strdup("/"));
+	}
 	return (res);
 }
 

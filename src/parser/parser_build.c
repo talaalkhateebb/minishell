@@ -21,7 +21,10 @@ t_cmd	*cmd_new(void)
 		return (NULL);
 	cmd->argv = malloc(sizeof(char *));
 	if (!cmd->argv)
-		return (free(cmd), NULL);
+	{
+		free(cmd);
+		return (NULL);
+	}
 	cmd->argv[0] = NULL;
 	cmd->redirs = NULL;
 	cmd->next = NULL;
@@ -42,13 +45,13 @@ int	argv_append(t_cmd *cmd, char *value)
 		n++;
 	bigger = malloc(sizeof(char *) * (n + 2));
 	if (!bigger)
-		return (free(value), 1);
-	i = 0;
-	while (i < n)
 	{
-		bigger[i] = cmd->argv[i];
-		i++;
+		free(value);
+		return (1);
 	}
+	i = -1;
+	while (++i < n)
+		bigger[i] = cmd->argv[i];
 	bigger[n] = value;
 	bigger[n + 1] = NULL;
 	free(cmd->argv);
@@ -67,6 +70,17 @@ int	word_append(t_cmd *cmd, t_token *tok, t_shell *sh)
 	return (expand_to_argv(cmd, tok->value, sh));
 }
 
+/* Fills a fresh node; linking it into the list is the caller's job. */
+static void	redir_init(t_redir *redir, t_token_type type, char *target,
+	int expand)
+{
+	redir->type = type;
+	redir->target = target;
+	redir->expand_heredoc = expand;
+	redir->heredoc_fd = -1;
+	redir->next = NULL;
+}
+
 /* Takes ownership of `target`. */
 int	redir_append(t_cmd *cmd, t_token_type type, char *target, int expand)
 {
@@ -77,14 +91,16 @@ int	redir_append(t_cmd *cmd, t_token_type type, char *target, int expand)
 		return (1);
 	redir = malloc(sizeof(t_redir));
 	if (!redir)
-		return (free(target), 1);
-	redir->type = type;
-	redir->target = target;
-	redir->expand_heredoc = expand;
-	redir->heredoc_fd = -1;
-	redir->next = NULL;
+	{
+		free(target);
+		return (1);
+	}
+	redir_init(redir, type, target, expand);
 	if (!cmd->redirs)
-		return (cmd->redirs = redir, 0);
+	{
+		cmd->redirs = redir;
+		return (0);
+	}
 	cur = cmd->redirs;
 	while (cur->next)
 		cur = cur->next;

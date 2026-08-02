@@ -114,12 +114,16 @@ struct s_expand
 };
 char	*expand_word(const char *s, t_shell *sh);
 int		expand_to_argv(t_cmd *cmd, const char *s, t_shell *sh);
+int		append_split(struct s_expand *exp, const char *val);
 char	*strip_quotes(const char *s);
 int		is_quoted(const char *s);
 char	*append_str(char *res, const char *add);
+char	*append_dollar(char *res, const char *s, int *i, t_shell *sh);
 char	*append_char(char *res, char c);
 char	*tilde_seed(const char *s, int *i, t_shell *sh);
 char	*expand_dollar(const char *s, int *i, t_shell *sh);
+char	*expand_special(const char *s, int *i, t_shell *sh);
+char	*expand_braced(const char *s, int *i, t_shell *sh);
 char	*expand_heredoc_line(const char *s, t_shell *sh);
 char	*handle_single(const char *s, int *i, char *res);
 char	*handle_double(const char *s, int *i, char *res, t_shell *sh);
@@ -150,9 +154,11 @@ void	exec_as_shell_script(char *path, char **argv, char **env);
 int		run_pipeline(t_cmd *cmds, t_shell *sh);
 int		apply_redirs(t_cmd *cmd);
 int		process_heredocs(t_cmd *cmds, t_shell *sh);
+int		heredoc_open(int *fds);
 void	close_heredocs(t_cmd *cmds);
 int		count_cmds(t_cmd *cmds);
 void	close_pipes(int (*pipes)[2], int n);
+int		pipeline_fail(int (*pipes)[2], pid_t *pids);
 int		wait_children(pid_t *pids, int n);
 void	child_exit(t_shell *sh, int code);
 void	child_exec_fail(t_cmd *cmd, t_shell *sh);
@@ -180,6 +186,8 @@ char	*cd_logical_path(t_shell *sh, const char *target);
 int		cd_move(const char *target, const char *logical);
 int		cd_report_lost_cwd(t_shell *sh);
 char	*cd_target_path(t_shell *sh, const char *target, int lost);
+int		cd_reject_args(char **argv);
+int		cd_apply(t_shell *sh, const char *target, char *old, char *dest);
 int		builtin_exit(char **argv, t_shell *sh);
 int		builtin_dot(char **argv);
 
@@ -199,6 +207,7 @@ int		is_interactive(void);
 void	enable_echoctl(void);
 void	put_str(int fd, const char *s);
 void	put_err(const char *prefix, const char *msg);
+int		err_ret(const char *prefix, const char *msg, int code);
 int		read_pid(void);
 
 #endif

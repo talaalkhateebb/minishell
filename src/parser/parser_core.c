@@ -61,9 +61,15 @@ static int	handle_redir(t_cmd *cur, t_token **toks, t_shell *sh)
 static int	handle_pipe(t_cmd **cur, t_token **toks, t_shell *sh, int filled)
 {
 	if (!filled)
-		return (syntax_error("|", sh), 1);
+	{
+		syntax_error("|", sh);
+		return (1);
+	}
 	if (!(*toks)->next)
-		return (syntax_error("newline", sh), 1);
+	{
+		syntax_error("newline", sh);
+		return (1);
+	}
 	(*cur)->next = cmd_new();
 	if (!(*cur)->next)
 		return (1);
@@ -76,7 +82,10 @@ static int	handle_word(t_cmd *cur, t_token **toks, t_shell *sh,
 	int *filled)
 {
 	if (!*filled && is_reserved_word((*toks)->value))
-		return (syntax_error((*toks)->value, sh), 1);
+	{
+		syntax_error((*toks)->value, sh);
+		return (1);
+	}
 	if (word_append(cur, *toks, sh))
 		return (1);
 	*toks = (*toks)->next;
@@ -132,5 +141,6 @@ t_cmd	*parse_tokens(t_token *toks, t_shell *sh)
 	}
 	free(sh->syntax_token);
 	sh->syntax_token = NULL;
-	return (free_cmds(head), NULL);
+	free_cmds(head);
+	return (NULL);
 }

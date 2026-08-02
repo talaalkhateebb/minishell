@@ -74,7 +74,7 @@ int	env_run_command(char **av, t_shell *sh)
 	if (pid == -1)
 	{
 		setup_signals_interactive();
-		return (put_err("env", "fork failed"), 1);
+		return (err_ret("env", "fork failed", 1));
 	}
 	if (pid == 0)
 		env_exec_child(av, sh);

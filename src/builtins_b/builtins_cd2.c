@@ -59,3 +59,52 @@ char	*cd_target_path(t_shell *sh, const char *target, int lost)
 	res = append_char(res, '/');
 	return (append_str(res, target));
 }
+
+/* bash reports `cd: <path>: <reason>`, keeping the builtin's name. */
+static void	cd_error(const char *target)
+{
+	put_str(2, "minishell: cd: ");
+	put_str(2, target);
+	put_str(2, ": ");
+	put_str(2, strerror(errno));
+	put_str(2, "\n");
+}
+
+/*
+** The two argument shapes bash refuses before it resolves anything: more
+** than one operand, and an empty one. Non-zero means it has complained
+** already and cd should stop.
+*/
+int	cd_reject_args(char **argv)
+{
+	if (argv[1] && argv[2])
+		return (err_ret("cd", "too many arguments", 1));
+	if (argv[1] && !argv[1][0])
+		return (err_ret("cd", "null directory", 1));
+	return (0);
+}
+
+/*
+** Performs the move and records it. Takes ownership of `old` and `new`,
+** which are freed on every path — that ownership is what lets builtin_cd()
+** hand back a single value instead of a cleanup-and-status pair.
+*/
+int	cd_apply(t_shell *sh, const char *target, char *old, char *dest)
+{
+	int	status;
+
+	status = 0;
+	if (cd_move(target, dest) == -1)
+	{
+		cd_error(target);
+		status = 1;
+	}
+	else
+	{
+		env_set(sh, "OLDPWD", old);
+		env_set(sh, "PWD", dest);
+	}
+	free(old);
+	free(dest);
+	return (status);
+}

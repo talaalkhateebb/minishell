@@ -66,7 +66,10 @@ static int	apply_one_redir(t_redir *r)
 	else
 		target_fd = STDOUT_FILENO;
 	if (dup2(fd, target_fd) == -1)
-		return (close(fd), -1);
+	{
+		close(fd);
+		return (-1);
+	}
 	close(fd);
 	return (0);
 }

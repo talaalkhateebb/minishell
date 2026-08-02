@@ -49,7 +49,10 @@ static int	env_grow(t_shell *sh, char *entry)
 		n++;
 	bigger = malloc(sizeof(char *) * (n + 2));
 	if (!bigger)
-		return (free(entry), 1);
+	{
+		free(entry);
+		return (1);
+	}
 	i = 0;
 	while (i < n)
 	{

@@ -25,6 +25,18 @@ int	count_cmds(t_cmd *cmds)
 	return (n);
 }
 
+/*
+** A pipeline that could not even be set up: release the two tables and
+** hand back the status. Named so that run_pipeline() can bail out with a
+** single value rather than returning the cleanup and the status together.
+*/
+int	pipeline_fail(int (*pipes)[2], pid_t *pids)
+{
+	free(pipes);
+	free(pids);
+	return (1);
+}
+
 void	close_pipes(int (*pipes)[2], int n)
 {
 	int	i;

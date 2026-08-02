@@ -112,10 +112,17 @@ int	env_init(t_shell *sh, char **envp)
 	if (!sh->envp)
 		return (1);
 	if (copy_envp(sh, envp))
-		return (env_free(sh), 1);
+	{
+		env_free(sh);
+		return (1);
+	}
 	if (env_find_index(sh, "OLDPWD") == -1 && env_set(sh, "OLDPWD", NULL))
-		return (env_free(sh), 1);
-	return (update_shlvl(sh), 0);
+	{
+		env_free(sh);
+		return (1);
+	}
+	update_shlvl(sh);
+	return (0);
 }
 
 void	env_free(t_shell *sh)

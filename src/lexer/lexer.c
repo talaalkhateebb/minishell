@@ -107,7 +107,10 @@ t_token	*tokenize(const char *line, int *err)
 		{
 			*err = lex_word(line, &i, &head);
 			if (*err)
-				return (free_tokens(head), NULL);
+			{
+				free_tokens(head);
+				return (NULL);
+			}
 		}
 	}
 	return (head);

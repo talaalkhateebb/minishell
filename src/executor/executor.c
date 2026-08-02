@@ -126,16 +126,21 @@ int	execute(t_cmd *cmds, t_shell *sh)
 	if (!cmds)
 		return (sh->last_status);
 	if (process_heredocs(cmds, sh) == -1)
-		return (close_heredocs(cmds), 130);
+	{
+		close_heredocs(cmds);
+		return (130);
+	}
 	if (!cmds->next && !cmds->argv[0])
 	{
 		status = redirs_only(cmds);
-		return (close_heredocs(cmds), status);
+		close_heredocs(cmds);
+		return (status);
 	}
 	if (!cmds->next && is_builtin(cmds->argv[0]))
 	{
 		status = execute_builtin_parent(cmds, sh);
-		return (close_heredocs(cmds), status);
+		close_heredocs(cmds);
+		return (status);
 	}
 	return (run_pipeline(cmds, sh));
 }

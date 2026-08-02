@@ -95,12 +95,12 @@ int	report_exec_error(char *cmd)
 	char		*copy;
 
 	if (!has_slash(cmd))
-		return (put_err(cmd, "command not found"), 127);
+		return (err_ret(cmd, "command not found", 127));
 	if (stat(cmd, &st) == 0)
 	{
 		if (S_ISDIR(st.st_mode))
-			return (put_err(cmd, "Is a directory"), 126);
-		return (put_err(cmd, "Permission denied"), 126);
+			return (err_ret(cmd, "Is a directory", 126));
+		return (err_ret(cmd, "Permission denied", 126));
 	}
 	copy = ms_strdup(cmd);
 	if (copy)
@@ -110,9 +110,9 @@ int	report_exec_error(char *cmd)
 			&& !S_ISDIR(st.st_mode))
 		{
 			free(copy);
-			return (put_err(cmd, "Not a directory"), 126);
+			return (err_ret(cmd, "Not a directory", 126));
 		}
 		free(copy);
 	}
-	return (put_err(cmd, "No such file or directory"), 127);
+	return (err_ret(cmd, "No such file or directory", 127));
 }

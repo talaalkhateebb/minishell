@@ -56,7 +56,10 @@ static char	*read_plain_line(void)
 	buf[1] = '\0';
 	n = read(STDIN_FILENO, buf, 1);
 	if (n <= 0)
-		return (free(line), NULL);
+	{
+		free(line);
+		return (NULL);
+	}
 	while (n > 0 && buf[0] != '\n')
 	{
 		line = append_char(line, buf[0]);

@@ -103,12 +103,16 @@ for i in "${!CASES[@]}"; do
 		if grep -qE "definitely lost: [1-9]|indirectly lost: [1-9]" "$log"; then
 			bad="$bad leak"
 		fi
-		# --track-fds: 0/1/2 are inherited, anything else is ours.
-		if grep -q "Open file descriptor" "$log" && \
-		   grep -A2 "Open file descriptor" "$log" | grep -qv "inherited from parent"; then
-			if grep -cE "Open file descriptor [3-9]" "$log" | grep -qv '^0$'; then
-				bad="$bad fd"
-			fi
+		# --track-fds: 0/1/2 are the std fds we were launched with, so only
+		# 3 and up can be ours. The one thing that must NOT count is
+		# --log-file's own descriptor: valgrind opens the log it is writing
+		# (and, after a fork, the parent's log too) and then reports it as
+		# still open at exit, in every process, every run. Those lines name
+		# the log path, which is what excludes them here — and only them, so
+		# a pipe end a child really did leave open is still caught.
+		if grep -E "Open file descriptor [3-9][0-9]*:" "$log" \
+			| grep -qv "ms_vg_[0-9]*\.log"; then
+			bad="$bad fd"
 		fi
 	done
 

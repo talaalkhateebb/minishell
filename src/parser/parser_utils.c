@@ -73,7 +73,8 @@ char	*expand_redir_target(t_token *target, t_shell *sh)
 	{
 		put_err(target->value, "ambiguous redirect");
 		sh->last_status = 1;
-		return (free(expanded), NULL);
+		free(expanded);
+		return (NULL);
 	}
 	return (expanded);
 }

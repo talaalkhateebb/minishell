@@ -36,6 +36,7 @@ static int	export_one(char *arg, t_shell *sh)
 {
 	char	*key;
 	int		eq;
+	int		status;
 
 	if (!is_valid_identifier(arg))
 	{
@@ -47,18 +48,16 @@ static int	export_one(char *arg, t_shell *sh)
 	eq = 0;
 	while (arg[eq] && arg[eq] != '=')
 		eq++;
-	if (!arg[eq])
-	{
-		if (env_find_index(sh, arg) == -1)
-			return (env_set(sh, arg, NULL));
+	if (!arg[eq] && env_find_index(sh, arg) != -1)
 		return (0);
-	}
+	if (!arg[eq])
+		return (env_set(sh, arg, NULL));
 	key = ms_substr(arg, 0, eq);
 	if (!key)
 		return (1);
-	if (env_set(sh, key, arg + eq + 1))
-		return (free(key), 1);
-	return (free(key), 0);
+	status = env_set(sh, key, arg + eq + 1);
+	free(key);
+	return (status != 0);
 }
 
 int	builtin_export(char **argv, t_shell *sh)
@@ -67,7 +66,10 @@ int	builtin_export(char **argv, t_shell *sh)
 	int	status;
 
 	if (!argv[1])
-		return (print_exports(sh), 0);
+	{
+		print_exports(sh);
+		return (0);
+	}
 	status = 0;
 	i = 1;
 	while (argv[i])

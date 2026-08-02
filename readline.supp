@@ -90,10 +90,9 @@
 }
 
 # fds 0/1/2 are inherited from the shell that launched valgrind; --track-fds
-# always lists them and they are not ours to close.
-{
-   std-fds-inherited
-   Memcheck:FdNotClosed
-   ...
-   fun:main
-}
+# always lists them and they are not ours to close. There is deliberately no
+# Memcheck:FdNotClosed suppression here: that suppression type does not exist
+# before valgrind 3.24, and older builds (3.22 ships with Ubuntu 24.04) abort
+# with "unknown tool suppression type" the moment they parse it — taking the
+# whole run down instead of just that one report. run_leaks.sh filters the
+# std fds out of the log itself, which works on every version.
