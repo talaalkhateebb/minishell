@@ -53,6 +53,7 @@ SRCS = \
 	src/executor/executor.c \
 	src/executor/executor_path.c \
 	src/executor/executor_error.c \
+	src/executor/executor_child.c \
 	src/redirections/redirections.c \
 	src/pipes/pipes.c \
 	src/pipes/pipes_utils.c \

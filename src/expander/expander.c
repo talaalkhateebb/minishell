@@ -33,7 +33,10 @@ static int	is_ifs(char c)
 static int	push_field(struct s_expand *exp)
 {
 	if (argv_append(exp->cmd, exp->cur))
+	{
+		exp->cur = NULL;
 		return (1);
+	}
 	exp->quoted = 0;
 	exp->cur = ms_strdup("");
 	if (!exp->cur)

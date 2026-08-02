@@ -28,8 +28,11 @@
 ** tool quotes the operand it is complaining about ("ls: cannot access
 ** 'foo'"), so the Ubuntu bash this is measured against prints
 ** `env: 'test/': ...`. The BSD env on macOS leaves the quotes out.
+**
+** The message is printed before child_exit() frees anything, because `name`
+** points into the command list that is about to go.
 */
-static void	env_exec_error(const char *name, int code)
+static void	env_exec_error(t_shell *sh, const char *name, int code)
 {
 	put_str(2, "env: '");
 	put_str(2, name);
@@ -37,8 +40,8 @@ static void	env_exec_error(const char *name, int code)
 	put_str(2, strerror(code));
 	put_str(2, "\n");
 	if (code == ENOENT)
-		exit(127);
-	exit(126);
+		child_exit(sh, 127);
+	child_exit(sh, 126);
 }
 
 static void	env_exec_child(char **av, t_shell *sh)
@@ -52,12 +55,13 @@ static void	env_exec_child(char **av, t_shell *sh)
 	else
 		path = find_executable(av[0], sh);
 	if (!path)
-		env_exec_error(av[0], ENOENT);
+		env_exec_error(sh, av[0], ENOENT);
 	env = env_to_array(sh);
 	execve(path, av, env);
 	if (errno == ENOEXEC)
 		exec_as_shell_script(path, av, env);
-	env_exec_error(av[0], errno);
+	free(path);
+	env_exec_error(sh, av[0], errno);
 }
 
 int	env_run_command(char **av, t_shell *sh)

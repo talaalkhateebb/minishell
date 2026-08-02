@@ -61,14 +61,22 @@ typedef struct s_cmd
 	struct s_cmd	*next;
 }	t_cmd;
 
+/*
+** `line` and `cmds` are borrowed handles on what the main loop currently
+** owns. Nothing here frees them in the normal course of things — they exist
+** so that a forked child, which inherits every allocation the parent made,
+** can hand the whole lot back before it exit()s. See child_exit().
+*/
 typedef struct s_shell
 {
-	char	**envp;
-	int		last_status;
-	int		should_exit;
-	char	*syntax_token;
-	int		pid;
-	int		cwd_lost;
+	char			**envp;
+	int				last_status;
+	int				should_exit;
+	char			*syntax_token;
+	int				pid;
+	int				cwd_lost;
+	char			*line;
+	struct s_cmd	*cmds;
 }	t_shell;
 
 extern volatile sig_atomic_t	g_signal;
@@ -146,6 +154,8 @@ void	close_heredocs(t_cmd *cmds);
 int		count_cmds(t_cmd *cmds);
 void	close_pipes(int (*pipes)[2], int n);
 int		wait_children(pid_t *pids, int n);
+void	child_exit(t_shell *sh, int code);
+void	child_exec_fail(t_cmd *cmd, t_shell *sh);
 
 /* === Signals — A owns === */
 void	setup_signals_interactive(void);

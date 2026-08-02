@@ -34,7 +34,9 @@ static void	run_one_line(char *line, t_shell *sh)
 	cmds = parse_line(line, sh);
 	if (!cmds)
 		return ;
+	sh->cmds = cmds;
 	sh->last_status = execute(cmds, sh);
+	sh->cmds = NULL;
 	free_cmds(cmds);
 }
 
@@ -53,7 +55,9 @@ static void	prompt_loop(t_shell *sh)
 				put_str(1, "exit\n");
 			break ;
 		}
+		sh->line = line;
 		run_one_line(line, sh);
+		sh->line = NULL;
 		free(line);
 		if (sh->should_exit)
 			break ;

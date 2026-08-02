@@ -1,0 +1,99 @@
+# Valgrind suppressions for minishell.
+#
+# readline keeps its line buffer, its keymaps, its terminal capability
+# strings and its history list allocated for the lifetime of the process and
+# offers no teardown call for most of it — rl_clear_history() frees the
+# history entries, and nothing frees the rest. Those blocks are readline's,
+# not ours, so they are suppressed here.
+#
+# NOTHING in this file matches minishell's own code: every suppression is
+# anchored to a libreadline / libhistory / libtinfo frame. If a leak in
+# src/ ever gets hidden by this file, that is a bug in the file.
+#
+# Usage:
+#   valgrind --leak-check=full --show-leak-kinds=all --track-fds=yes \
+#            --trace-children=yes --suppressions=readline.supp ./minishell
+
+{
+   readline-alloc-any
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   obj:*/libreadline.so*
+}
+
+{
+   readline-realloc-any
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   fun:realloc
+   ...
+   obj:*/libreadline.so*
+}
+
+{
+   history-alloc-any
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   obj:*/libhistory.so*
+}
+
+{
+   tinfo-alloc-any
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   obj:*/libtinfo.so*
+}
+
+{
+   ncurses-alloc-any
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   obj:*/libncurses*.so*
+}
+
+# readline's terminal setup goes through these by name on some builds, where
+# the object-name match above does not fire because the frame is inlined.
+{
+   readline-by-symbol
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   fun:readline
+}
+
+{
+   readline-initialize
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   fun:rl_initialize
+}
+
+{
+   readline-terminal-setup
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   fun:_rl_init_terminal_io
+}
+
+{
+   readline-add-history
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect,possible,reachable
+   ...
+   fun:add_history
+}
+
+# fds 0/1/2 are inherited from the shell that launched valgrind; --track-fds
+# always lists them and they are not ours to close.
+{
+   std-fds-inherited
+   Memcheck:FdNotClosed
+   ...
+   fun:main
+}

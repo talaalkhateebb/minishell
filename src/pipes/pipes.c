@@ -32,6 +32,14 @@ static void	child_wire_pipes(int (*pipes)[2], int n, int idx)
 	close_pipes(pipes, n - 1);
 }
 
+/*
+** apply_redirs() consumes THIS command's heredoc (dup2 onto stdin, then
+** close, then mark it -1). The read ends belonging to the OTHER commands in
+** the pipeline are still open in this child, inherited from the fork, and
+** execve() would carry them into the program — so they go first. Under
+** valgrind --track-fds they show up as leaked descriptors; without it they
+** are simply fds no one will ever read.
+*/
 static void	run_child(t_cmd *cmd, t_shell *sh)
 {
 	char	*exec_path;
@@ -39,25 +47,22 @@ static void	run_child(t_cmd *cmd, t_shell *sh)
 
 	setup_signals_child();
 	if (apply_redirs(cmd) == -1)
-		exit(1);
+		child_exit(sh, 1);
+	close_heredocs(sh->cmds);
 	if (!cmd->argv[0])
-		exit(0);
+		child_exit(sh, 0);
 	if (is_builtin(cmd->argv[0]))
-		exit(run_builtin(cmd, sh));
+		child_exit(sh, run_builtin(cmd, sh));
 	exec_path = find_executable(cmd->argv[0], sh);
-	if (!exec_path && !has_slash(cmd->argv[0]) && path_is_unset(sh))
-	{
-		put_err(cmd->argv[0], "No such file or directory");
-		exit(127);
-	}
 	if (!exec_path)
-		exit(report_exec_error(cmd->argv[0]));
+		child_exec_fail(cmd, sh);
 	env = env_to_array(sh);
 	execve(exec_path, cmd->argv, env);
 	if (errno == ENOEXEC)
 		exec_as_shell_script(exec_path, cmd->argv, env);
 	put_err(cmd->argv[0], strerror(errno));
-	exit(126);
+	free(exec_path);
+	child_exit(sh, 126);
 }
 
 static int	open_all_pipes(int (*pipes)[2], int n)

@@ -103,6 +103,8 @@ int	env_init(t_shell *sh, char **envp)
 	sh->last_status = 0;
 	sh->should_exit = 0;
 	sh->syntax_token = NULL;
+	sh->line = NULL;
+	sh->cmds = NULL;
 	n = 0;
 	while (envp && envp[n])
 		n++;
@@ -110,9 +112,9 @@ int	env_init(t_shell *sh, char **envp)
 	if (!sh->envp)
 		return (1);
 	if (copy_envp(sh, envp))
-		return (1);
+		return (env_free(sh), 1);
 	if (env_find_index(sh, "OLDPWD") == -1 && env_set(sh, "OLDPWD", NULL))
-		return (1);
+		return (env_free(sh), 1);
 	return (update_shlvl(sh), 0);
 }
 
